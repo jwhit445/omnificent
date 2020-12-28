@@ -10,8 +10,14 @@
 	Width="800">
 	<StackPanel>
 		<Button
-			Command="{Binding StartMossCommand}">
-			Start Moss
+			Command="{Binding StartGameCommand}">
+			Start Game
 		</Button>
+		<TextBlock
+			Text="Game Status:" />
+		<TextBlock
+			Text="{Binding GameStatusMessage}" />
+		<TextBlock
+			Text="{Binding LoginStatusMessage}" />
 	</StackPanel>
 </Window>
