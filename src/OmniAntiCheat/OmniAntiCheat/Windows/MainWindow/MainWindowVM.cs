@@ -2,14 +2,16 @@
 using Core.Extensions;
 using Core.Omni.MVVM;
 using Core.Omni.Utilities;
+using Epic.OnlineServices;
+using Epic.OnlineServices.Auth;
 using ICSharpCode.SharpZipLib.Zip;
+using OmniAntiCheat.EpicSDK;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -22,63 +24,112 @@ namespace OmniAntiCheat.Windows {
 		private const string MOSS_LAST_LOG_VALUE = "LAST_LOG";
 		private const string ROGUE_COMPANY_LAUNCH_URL = @"com.epicgames.launcher://apps/Pewee?action=launch&silent=true";
 		private const string ROGUE_COMPANY_PROCESS_NAME = "RogueCompany";
+		private const string NA_STRING = "N/A";
+		private const string STARTING_STRING = "Starting...";
+		private const string CLOSING_STRING = "Closing...";
+		private const string RUNNING_STRING = "Running...";
+		private const string FINDING_PROCESS = "Finding Process...";
 		private const int GAME_POLLING_SECONDS = 3;
 
 		private string _mossLocation = null;
 		private Process _mossCurrentProcess = null;
 		private Process _gameCurrentProcess = null;
 		private Action _onRogueCompanyClosed = null;
+		private string _scrapedEpicID = "";
+		private EpicClientWrapper _epicClient = null;
 
-		public MossStatus CurrentMossStatus {
-			get { return GetBindableProperty(() => CurrentMossStatus, MossStatus.NotRunning); }
-			set { SetBindableProperty(() => CurrentMossStatus, value); }
+		public string EpicID {
+			get { return GetBindableProperty(() => EpicID, ""); }
+			set { SetBindableProperty(() => EpicID, value); }
 		}
 
-		public string GameStatusMessage {
-			get { return GetBindableProperty(() => GameStatusMessage, "N/A"); }
-			set { SetBindableProperty(() => GameStatusMessage, value); }
+		public bool IsLoggedIn {
+			get { return GetBindableProperty(() => IsLoggedIn); }
+			set { SetBindableProperty(() => IsLoggedIn, value); }
 		}
 
-		public string LoginStatusMessage {
-			get { return GetBindableProperty(() => LoginStatusMessage, "Not logged in to Epic."); }
-			set { SetBindableProperty(() => LoginStatusMessage, value); }
+		public bool IsLoggingIn {
+			get { return GetBindableProperty(() => IsLoggingIn); }
+			set { SetBindableProperty(() => IsLoggingIn, value); }
+		}
+
+		[BindableProperty(nameof(UploadStatusMessage), nameof(CanStartGame))]
+		public bool IsUploadingToS3 {
+			get { return GetBindableProperty(() => IsUploadingToS3, false); }
+			set { SetBindableProperty(() => IsUploadingToS3, value); }
+		}
+
+		public string UploadStatusMessage {
+			get {
+				return IsUploadingToS3 ? "Uploading session information..." : "";
+			}
+		}
+
+		[BindableProperty(nameof(CanStartGame))]
+		public string MossStatus {
+			get { return GetBindableProperty(() => MossStatus, NA_STRING); }
+			set { SetBindableProperty(() => MossStatus, value); }
+		}
+
+		[BindableProperty(nameof(CanStartGame))]
+		public string GameStatus {
+			get { return GetBindableProperty(() => GameStatus, NA_STRING); }
+			set { SetBindableProperty(() => GameStatus, value); }
+		}
+
+		public bool CanStartGame {
+			get {
+				return MossStatus == NA_STRING && GameStatus == NA_STRING && !IsUploadingToS3;
+			}
 		}
 
 		public MainWindowVM() {
 			CheckForMossInstallation();
+			CheckScrapedEpicID();
+			_epicClient = new EpicClientWrapper();
 			TaskUtils.FireAndForget(StartPollForGameEvents());
+			TaskUtils.FireAndForget(Login(LoginCredentialType.PersistentAuth, true));
 		}
 
 		///<summary>Starts Moss and the game client.</summary>
 		public IAsyncCommand StartGameCommand => GetCommandAsync(() => StartGameCommand, true, async () => {
-			if(_mossCurrentProcess != null) {
+			if(_mossCurrentProcess != null || ProcessUtils.IsProcessRunning("moss")) {
 				MessageBox.Show("Moss is currently running. Please close before proceeding.");
 				return;
 			}
-			if(_gameCurrentProcess != null) {
+			if(_gameCurrentProcess != null || ProcessUtils.IsProcessRunning("roguecompany")) {
 				MessageBox.Show("Rougue Company is currently running. Please close before proceeding.");
 				return;
 			}
-			GameStatusMessage = "Starting Moss...";
+			MossStatus = STARTING_STRING;
 			try {
 				_mossCurrentProcess = Process.Start(_mossLocation, "ROG");
-				CurrentMossStatus = MossStatus.Running;
 				_mossCurrentProcess.EnableRaisingEvents = true;
 				_mossCurrentProcess.Exited += async (o, e) => {
-					CurrentMossStatus = MossStatus.NotRunning;
+					MossStatus = NA_STRING;
 					_mossCurrentProcess = null;
-					GameStatusMessage = "Uploading session logs...";
+					if(_gameCurrentProcess != null) {
+						//They closed moss without closing the game. Bad...
+						ExUtils.SwallowAnyException(() => {
+							//Fuckem.
+							_gameCurrentProcess.Kill();
+						});
+					}
+					IsUploadingToS3 = true;
 					await TransferSession();
-					GameStatusMessage = "N/A";
+					IsUploadingToS3 = false;
 				};
 				_onRogueCompanyClosed = () => {
-					GameStatusMessage = "Moss is closing...";
-					_mossCurrentProcess?.CloseMainWindow();
-					_mossCurrentProcess?.CloseMainWindow();
+					GameStatus = NA_STRING;
+					if(_mossCurrentProcess != null) {
+						MossStatus = CLOSING_STRING;
+						_mossCurrentProcess.CloseMainWindow();
+						_mossCurrentProcess.CloseMainWindow();
+					}
 				};
 			}
 			catch(Exception e) {
-				GameStatusMessage = "N/A";
+				MossStatus = NA_STRING;
 				MessageBox.Show($"Error starting Moss. Error Message: {e.Message}");
 				return;
 			}
@@ -86,24 +137,65 @@ namespace OmniAntiCheat.Windows {
 				//Blocking call.
 				_mossCurrentProcess.WaitForInputIdle();
 			});
+			MossStatus = RUNNING_STRING;
 			ProcessStartInfo psi = new ProcessStartInfo {
 				FileName = ROGUE_COMPANY_LAUNCH_URL,
 				UseShellExecute = true,
 			};
 			try {
-				GameStatusMessage = "Starting Rogue Company...";
+				GameStatus = STARTING_STRING;
 				//The process that returns from Process.Start is the Epic Launcher, not the rougue company process.
 				Process.Start(psi);
 			}
 			catch(Exception e) {
-				GameStatusMessage = "N/A";
+				GameStatus = NA_STRING;
 				_mossCurrentProcess?.CloseMainWindow();
 				_mossCurrentProcess?.CloseMainWindow();
 				MessageBox.Show($"Error starting Rogue Company. Please resolve the issue and try again. Error Message: {e.Message}");
 				return;
 			}
-			GameStatusMessage = "Moss and Rogue Company running...";
+			GameStatus = FINDING_PROCESS;
 		});
+
+		///<summary>Starts Moss and the game client.</summary>
+		public IAsyncCommand LoginCommand => GetCommandAsync(() => LoginCommand, true, async () => {
+			await Login(LoginCredentialType.AccountPortal);
+		});
+
+		private async Task Login(LoginCredentialType credentialType, bool isSilent = false) {
+			IsLoggingIn = true;
+			LoginCallbackInfo retVal = await _epicClient.Login(credentialType);
+			IsLoggingIn = false;
+			if(retVal.ResultCode != Result.Success) {
+				if(!isSilent) {
+					MessageBox.Show($"Login unsuccessful. Error: {retVal.ResultCode}");
+				}
+				return;
+			}
+			retVal.LocalUserId.ToString(out string epicID);
+			EpicID = epicID;
+			IsLoggedIn = true;
+			if(!string.IsNullOrWhiteSpace(_scrapedEpicID) && EpicID != _scrapedEpicID && !isSilent) {
+				MessageBox.Show("Different Epic ID scraped then used to log in.");
+			}
+		}
+
+		private void CheckScrapedEpicID() {
+			string appDataPath = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)).FullName;
+			string folderWithIDPath = Path.Combine(appDataPath, @"Local\EpicGamesLauncher\Saved\Data");
+			if(Directory.Exists(folderWithIDPath)) {
+				List<string> listFiles = Directory.GetFiles(folderWithIDPath).Select(x => Path.GetFileName(x)).ToList();
+				List<string> listIds = listFiles
+					.Select(x => Regex.Match(x, @"^([0-9a-zA-Z]{32})\.dat$"))
+					.Where(x => x != null)
+					.Select(x => x.Groups[1].Value)
+					.Where(x => !string.IsNullOrWhiteSpace(x))
+					.ToList();
+				if(listIds.Count == 1) {
+					_scrapedEpicID = listIds.First();
+				}
+			}
+		}
 
 		///<summary>Finds the latest session and attempts to parse/transfer the data to S3.</summary>
 		private async Task TransferSession() {
@@ -174,6 +266,9 @@ namespace OmniAntiCheat.Windows {
 				Process matchingProcess = Process.GetProcessesByName(ROGUE_COMPANY_PROCESS_NAME).FirstOrDefault();
 				if(matchingProcess != null && _gameCurrentProcess == null) {
 					//Found the proces for the first time.
+					if(GameStatus == FINDING_PROCESS) {
+						GameStatus = RUNNING_STRING;
+					}
 				}
 				else if(matchingProcess == null && _gameCurrentProcess != null) {
 					//Process closed down.
@@ -196,8 +291,4 @@ namespace OmniAntiCheat.Windows {
 
 	}
 
-	public enum MossStatus {
-		NotRunning,
-		Running,
-	}
 }
