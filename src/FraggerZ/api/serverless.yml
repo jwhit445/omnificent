@@ -1,0 +1,224 @@
+service: fraggerz-api
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: us-east-2
+  stage: alpha
+  environment:
+    NODE_ENV: dev
+    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: [
+        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}",
+        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}/index/*",
+        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:service}-test",
+        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:service}-test/index/*"
+      ]
+  apiGateway:
+    shouldStartNameWithService: true
+
+functions:
+  adminResetAllMmr:
+    handler: dist/admin/handler.resetAllMmr
+    events:
+      - http:
+          path: admin/resetmmr
+          method: post
+  adminRedoAllMmr:
+    handler: dist/admin/handler.redoAllMmr
+    events:
+      - http:
+          path: admin/redommr
+          method: post
+
+  matchRegister:
+    handler: dist/match/handler.register
+    events:
+      - http:
+          path: match
+          method: post
+  matchgetOne:
+    handler: dist/match/handler.getOne
+    events:
+      - http:
+          path: match/{id}
+          method: get
+  matchUpdate:
+    handler: dist/match/handler.update
+    events:
+      - http:
+          path: match/{id}
+          method: put
+  matchReport:
+    handler: dist/match/handler.report
+    events:
+      - http:
+          path: match/{id}/report
+          method: put
+  matchGetByMatchNum:
+    handler: dist/match/handler.getByMatchNum
+    events:
+      - http:
+          path: match
+          method: get
+          request:
+            parameters:
+              querystrings:
+                matchNumber: true
+
+  scrimCreate:
+    handler: scrim/handler.create
+    events:
+      - http:
+          path: scrim
+          method: post
+  scrimGetByMessageId:
+    handler: dist/scrim/handler.getByMessageId
+    events:
+      - http:
+          path: scrim
+          method: get
+          request:
+            parameters:
+              querystrings:
+                messageId: true
+  scrimGetByTeams:
+    handler: dist/scrim/handler.getByTeams
+    events:
+      - http:
+          path: scrim
+          method: get
+          request:
+            parameters:
+              querystrings:
+                team1: true
+                team2: true
+  scrimDelete:
+    handler: dist/scrim/handler.deleteScrim
+    events:
+      - http:
+          path: scrim/{id}
+          method: delete
+
+  teamRegister:
+    handler: dist/team/handler.register
+    events:
+      - http:
+          path: team
+          method: post
+  teamGetOne:
+    handler: dist/team/handler.getOne
+    events:
+      - http:
+          path: team/{id}
+          method: get
+  teamUpdate:
+    handler: dist/team/handler.update
+    events:
+      - http:
+          path: team/{id}
+          method: put
+  teamGetStats:
+    handler: dist/team/handler.getStats
+    events:
+      - http:
+          path: team/{id}/stats
+          method: get
+
+  userRegister:
+    handler: dist/user/handler.register
+    events:
+      - http:
+          path: user
+          method: post
+  userGetOne:
+    handler: dist/user/handler.getOne
+    events:
+      - http:
+          path: user/{id}
+          method: get
+  userUpdate:
+    handler: dist/user/handler.update
+    events:
+      - http:
+          path: user/{id}
+          method: put
+  userGetStatsWithMatches:
+    handler: dist/user/handler.getStatsWithMatches
+    events:
+      - http:
+          path: user/{id}/statswithmatches
+          method: get
+  userGetStats:
+    handler: dist/user/handler.getStats
+    events:
+      - http:
+          path: user/{id}/stats
+          method: get
+  userGetAll:
+    handler: dist/user/handler.getAll
+    events:
+      - http:
+          path: user
+          method: get
+  userGetLeaderboard:
+    handler: dist/user/handler.getLeaderboard
+    events:
+      - http:
+          path: user/leaderboard
+          method: get
+
+resources:
+  Resources:
+    FraggerzDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: Id
+            AttributeType: S
+          - AttributeName: EntityType
+            AttributeType: S
+          - AttributeName: MatchNumber
+            AttributeType: N
+        KeySchema:
+          - AttributeName: Id
+            KeyType: HASH
+          - AttributeName: EntityType
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - IndexName: EntityTypeIndex
+            KeySchema:
+              - AttributeName: Id
+                KeyType: HASH
+              - AttributeName: EntityType
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+          - IndexName: EntityTypeMatchNumberIndex
+            KeySchema:
+              - AttributeName: EntityType
+                KeyType: HASH
+              - AttributeName: MatchNumber
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
