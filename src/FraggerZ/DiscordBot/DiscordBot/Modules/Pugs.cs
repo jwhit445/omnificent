@@ -7,6 +7,7 @@ using DiscordBot.Models;
 using System;
 using DiscordBot.Settings;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
 
 public class PugsModule : ModuleBase<SocketCommandContext>
 {
@@ -73,8 +74,13 @@ public class PugsModule : ModuleBase<SocketCommandContext>
 		}.Build();
 
 		var message = await Context.Channel.SendMessageAsync(null, false, embed);
-
-		await message.AddReactionsAsync(new IEmote[] { new Emoji(_emoteSettings.PlayEmoteUnicode), new Emoji(_emoteSettings.XEmoteUnicode) });
+		List<IEmote> reactions = new List<IEmote>() {
+			new Emoji(_emoteSettings.PlayEmoteUnicode)
+		};
+		if(_rocoPugService.DictQueueForChannel.ContainsKey(Context.Channel.Id) && _rocoPugService.DictQueueForChannel[Context.Channel.Id].QueueType != QueueType.NACPlus) {
+			reactions.Add(new Emoji(_emoteSettings.PlayDuoEmoteUnicode));
+        }
+		await message.AddReactionsAsync(reactions.ToArray());
 	}
 
 }

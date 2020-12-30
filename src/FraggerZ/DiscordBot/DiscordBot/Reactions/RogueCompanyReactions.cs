@@ -23,6 +23,7 @@ namespace DiscordBot.Reactions
         public async Task HandleReactionAddedAsync(Cacheable<IUserMessage,
            ulong> message, SocketTextChannel channel, SocketReaction reaction)
         {
+            var user = channel.GetUser(reaction.UserId);
             string region = "NA";
             QueueType type = QueueType.NAMain;
             if(channel.Id == _channelSettings.RoCoNAQueueCPlusUpChannelId)
@@ -36,21 +37,25 @@ namespace DiscordBot.Reactions
             }
             if (reaction.Emote.Name == _emoteSettings.PlayDuoEmoteName)
             {
-                await _rocoPugService.StartDuoQueueAttempt(type, reaction.User.Value);
+                await _rocoPugService.StartDuoQueueAttempt(type, user);
             }
             else
             {
-                await _rocoPugService.Join(region, channel.GetUser(reaction.UserId), channel);
+                await _rocoPugService.Join(region, user, channel);
             }
         }
 
-        public async Task HandleReactionRemovedAsync(Cacheable<IUserMessage,
-            ulong> message, SocketTextChannel channel, SocketReaction reaction)
-        {
-            if (channel.Id == _channelSettings.RoCoNAQueueChannelId || channel.Id == _channelSettings.RoCoNAQueueCPlusUpChannelId)
-                await _rocoPugService.Leave("NA", channel.GetUser(reaction.UserId), channel);
-            else if (channel.Id == _channelSettings.RoCoEUQueueChannelId)
-                await _rocoPugService.Leave("EU", channel.GetUser(reaction.UserId), channel);
+        public async Task HandleReactionRemovedAsync(Cacheable<IUserMessage, ulong> message, SocketTextChannel channel, SocketReaction reaction) {
+            string region = "NA";
+            if (channel.Id == _channelSettings.RoCoEUQueueChannelId) {
+                region = "EU";
+            }
+            if (reaction.Emote.Name == _emoteSettings.PlayDuoEmoteName) {
+                await _rocoPugService.LeaveDuo(region, channel.GetUser(reaction.UserId), channel);
+            }
+            else {
+                await _rocoPugService.Leave(region, channel.GetUser(reaction.UserId), channel);
+            }
         }
     }
 }

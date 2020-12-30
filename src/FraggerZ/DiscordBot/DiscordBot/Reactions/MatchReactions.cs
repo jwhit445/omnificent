@@ -37,17 +37,21 @@ namespace DiscordBot.Reactions
         public async Task HandleDMReactionAddedAsync(Cacheable<IUserMessage,
            ulong> message, SocketDMChannel channel, SocketReaction reaction)
         {
-            if(reaction.Emote.Name == _emoteSettings.CheckEmoteName)
+            var user = channel.GetUser(reaction.UserId);
+            if (reaction.Emote.Name == _emoteSettings.CheckEmoteName)
             {
-                if(_rocoPugService.DuoPartners.ContainsKey(reaction.User.Value))
+                if(_rocoPugService.DuoPartners.ContainsKey(user.Id))
                 {
-                    _rocoPugService.DuoPartners[reaction.User.Value].player2;
-                    _rocoPugService.DuoPartners[channel.Recipient] = (_rocoPugService.DuoPartners[channel.Recipient].queue, channel.Recipient);
+                    var queue = _rocoPugService.DuoPartners[user.Id].queue;
+                    await _rocoPugService.FinalizeDuoPartners(queue, user.Id, _rocoPugService.DuoPartners[user.Id].player2);
                 }
             }
             else if(reaction.Emote.Name == _emoteSettings.XEmoteName)
             {
-
+                if(_rocoPugService.DuoPartners.ContainsKey(user.Id))
+                {
+                    _rocoPugService.DuoPartners.Remove(user.Id);
+                }
             }
         }
 
