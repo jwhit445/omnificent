@@ -467,7 +467,7 @@ namespace DiscordBot.Services
             string title = $"Duo queue initiated.";
             EmbedBuilder builder = new EmbedBuilder();
             string description = $"You have initiated a request to join {queueName} with a partner. \n\n" +
-                $"To invite someone, type the following command and we will let you know if they accept or decline:" +
+                $"To invite someone, go to the `#duoinvite` channel and type the following command and we will let you know if they accept or decline: \n" +
                 $"`!duoinvite @name`";
 
             builder.WithColor(Color.Blue);
@@ -478,9 +478,9 @@ namespace DiscordBot.Services
 
         public Embed InviteDuo(string queueName, IUser inviter)
         {
-            string title = $"Duo invite request sent by {inviter.Mention} for the {queueName} queue.";
+            string title = $"Duo invite request sent by {inviter.Username} for the {queueName} queue.";
             EmbedBuilder builder = new EmbedBuilder();
-            string description = $"{inviter.Username} has requested that you join the {queueName} with them. \n\n"
+            string description = $"{inviter.Username} has requested that you join the {queueName} queue with them. \n\n"
                 +"You are guaranteed to play with this player when a match is started.";
 
             builder.WithColor(Color.Blue);
@@ -588,7 +588,7 @@ namespace DiscordBot.Services
             */
         }
 
-        public async Task UpdateQueueEmbed(List<IUser> queue, SocketTextChannel channel, bool matchWasGenerated = false)
+        public async Task UpdateQueueEmbed(PlayerQueue queue, SocketTextChannel channel, bool matchWasGenerated = false)
         {
             // Update pug embed in the channel
             var messages = await channel.GetMessagesAsync(1).FlattenAsync();
@@ -596,10 +596,14 @@ namespace DiscordBot.Services
             if (message == null)
                 message = channel.GetCachedMessages(1).FirstOrDefault();
 
-            string description = $"Users in queue: `{queue.Count}` / 8\n\n";
-            foreach (IUser userCurr in queue)
+            string description = $"Users in queue: `{queue.PlayersInQueue.Count}` / 8\n\n";
+            var listDuoIds = queue.DuoPlayers.Select(x => x.Item1.Id).Union(queue.DuoPlayers.Select(x => x.Item2.Id)).ToList();
+            foreach (IUser userCurr in queue.PlayersInQueue)
             {
                 description += userCurr.Mention;
+                if(listDuoIds.Contains(userCurr.Id)) {
+                    description += " (duo)";
+                }
                 description += "\n";
             }
             Embed embed = new EmbedBuilder() { Color = Color.Green, Title = "PUG Queue" + (channel.Id == _channelSettings.RoCoNAQueueCPlusUpChannelId ? " For Rank C+ and up" : ""), Description = description }.Build();
@@ -611,12 +615,14 @@ namespace DiscordBot.Services
                 // clear all reactions if queue empty ( match was just generated )
                 if (matchWasGenerated)
                 {
-                    if (queue.Count <= 0)
+                    if (queue.PlayersInQueue.Count <= 0)
                     {
 
                         await restUserMessage.RemoveAllReactionsAsync();
                         await restUserMessage.AddReactionAsync(new Emoji(_emoteSettings.PlayEmoteUnicode));
-                        await restUserMessage.AddReactionAsync(new Emoji(_emoteSettings.PlayDuoEmoteUnicode));
+                        if(queue.QueueType != QueueType.NACPlus) {
+                            await restUserMessage.AddReactionAsync(new Emoji(_emoteSettings.PlayDuoEmoteUnicode));
+                        }
                     }
                 }
             }

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using DiscordBot.Settings;
 using DiscordBot.Util;
+using System.Linq;
 
 public class MatchModule : ModuleBase<SocketCommandContext>
 {
@@ -118,12 +119,43 @@ public class MatchModule : ModuleBase<SocketCommandContext>
 		}
 	}
 
+	[Command("duotest")]
+	[Summary("Ban a rogue.")]
+	public async Task DuoTest(SocketUser u1 = null, SocketUser u2 = null, SocketUser u3 = null, SocketUser u4 = null, SocketUser u5 = null, SocketUser u6 = null, SocketUser u7 = null, SocketUser u8 = null) {
+		try {
+			List<SocketUser> mentions = Context.Message.MentionedUsers.ToList();
+			if(mentions.Count<8) {
+				return;
+            }
+			Match match = new Match() {
+
+			};
+			PlayerQueue queue = new PlayerQueue(null, "NA", QueueType.NAMain);
+			queue.PlayersInQueue.AddRange(mentions);
+			queue.DuoPlayers.Add((mentions[0], mentions[1]));
+			queue.DuoPlayers.Add((mentions[6], mentions[7]));
+			var list = await _matchService.SetupAutomaticTeams(match, "Rogue Company", queue);
+			var team1 = list.FindAll(x => match.Team1DiscordIds.Contains(x.DiscordId)).Select(x => x.Username).ToList();
+			var team2 = list.FindAll(x => match.Team2DiscordIds.Contains(x.DiscordId)).Select(x => x.Username).ToList();
+			var ttt = "hi";
+		}
+		catch (Exception e) {
+			await ReplyAsync(e.Message);
+		}
+	}
+
 	[Command("duoinvite")]
 	[Summary("Invite a duo partner")]
 	public async Task DuoInvite(SocketGuildUser user)
     {
-		_rocoService.DuoPartners[user] = (_rocoService.DuoInviteStarted[Context.User].queue, Context.User);
-		var message = await user.SendMessageAsync(null, false, _embedService.InviteDuo(_rocoService.DuoInviteStarted[Context.User].queueType.ToString(), Context.User));
+		if(Context.Channel.Id != _channelSettings.RoCoDuoInviteChannelId) {
+			var responseMessage = await ReplyAsync($"Please use this command in <#{_channelSettings.RoCoDuoInviteChannelId}>");
+			await responseMessage.DeleteAfter(5000);
+			await Context.Message.DeleteAfter(5000);
+			return;
+		}
+		_rocoService.DuoPartners[user.Id] = (_rocoService.DuoInviteStarted[Context.User.Id].queue, Context.User.Id);
+		var message = await user.SendMessageAsync(null, false, _embedService.InviteDuo(_rocoService.DuoInviteStarted[Context.User.Id].queueType.ToString(), Context.User));
 		await message.AddReactionsAsync(new IEmote[] { new Emoji(_emoteSettings.CheckEmoteUnicode), new Emoji(_emoteSettings.XEmoteUnicode) });
 	}
 
@@ -135,8 +167,8 @@ public class MatchModule : ModuleBase<SocketCommandContext>
 		{
 			await Context.Message.DeleteAsync();
 			var deleteMe = await ReplyAsync("Please use this command in a match channel.");
-			await Task.Delay(10000);
-			await deleteMe.DeleteAsync();
+			await deleteMe.DeleteAfter(5000);
+			await Context.Message.DeleteAfter(5000);
 			return;
 		}
 
@@ -151,8 +183,8 @@ public class MatchModule : ModuleBase<SocketCommandContext>
 				await Context.Message.DeleteAsync();
 				var deleteMe = await ReplyAsync($"Could not retrieve the match by number: {matchNumber}. Make sure you are only using this" +
 					$" command in a match channel.");
-				await Task.Delay(10000);
-				await deleteMe.DeleteAsync();
+				await deleteMe.DeleteAfter(5000);
+				await Context.Message.DeleteAfter(5000);
 				return;
 			}
 
@@ -199,8 +231,8 @@ public class MatchModule : ModuleBase<SocketCommandContext>
 		{
 			await Context.Message.DeleteAsync();
 			var deleteMe = await ReplyAsync("Please use this command in a match channel.");
-			await Task.Delay(10000);
-			await deleteMe.DeleteAsync();
+			await deleteMe.DeleteAfter(5000);
+			await Context.Message.DeleteAfter(5000);
 			return;
 		}
 
@@ -237,8 +269,8 @@ public class MatchModule : ModuleBase<SocketCommandContext>
 		{
 			await Context.Message.DeleteAsync();
 			var deleteMe = await ReplyAsync("Please @mention a user to pick them.");
-			await Task.Delay(10000);
-			await deleteMe.DeleteAsync();
+			await deleteMe.DeleteAfter(5000);
+			await Context.Message.DeleteAfter(5000);
 			return;
 		}
 
@@ -246,8 +278,8 @@ public class MatchModule : ModuleBase<SocketCommandContext>
 		{
 			await Context.Message.DeleteAsync();
 			var deleteMe = await ReplyAsync("Please use this command in a match channel.");
-			await Task.Delay(10000);
-			await deleteMe.DeleteAsync();
+			await deleteMe.DeleteAfter(5000);
+			await Context.Message.DeleteAfter(5000);
 			return;
 		}
 
@@ -262,8 +294,8 @@ public class MatchModule : ModuleBase<SocketCommandContext>
 			{
 				await Context.Message.DeleteAsync();
 				var deleteMe = await ReplyAsync($"Could not retrieve the match by number: {matchNumber}");
-				await Task.Delay(10000);
-				await deleteMe.DeleteAsync();
+				await deleteMe.DeleteAfter(5000);
+				await Context.Message.DeleteAfter(5000);
 				return;
 			}
 			User user = await _userService.GetById(Context.User.Id);
@@ -273,8 +305,8 @@ public class MatchModule : ModuleBase<SocketCommandContext>
 			{
 				await Context.Message.DeleteAsync();
 				var deleteMe = await ReplyAsync("It is not your turn to pick.");
-				await Task.Delay(10000);
-				await deleteMe.DeleteAsync();
+				await deleteMe.DeleteAfter(5000);
+				await Context.Message.DeleteAfter(5000);
 				return;
 			}
 
@@ -283,8 +315,8 @@ public class MatchModule : ModuleBase<SocketCommandContext>
 			{
 				await Context.Message.DeleteAsync();
 				var deleteMe = await ReplyAsync("That player is not in the player pool for this match.");
-				await Task.Delay(10000);
-				await deleteMe.DeleteAsync();
+				await deleteMe.DeleteAfter(5000);
+				await Context.Message.DeleteAfter(5000);
 				return;
 			}
 			Console.WriteLine("Adding player to team.");

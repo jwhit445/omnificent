@@ -19,6 +19,7 @@
         public ulong RoCoMatchLogsChannelId { get; set; }
         public ulong RoCoStatsChannelId { get; set; }
         public ulong RoCoOpenLobbyChannelId { get; set; }
+        public ulong RoCoDuoInviteChannelId { get; set; }
 
         //Team Specific
         public ulong RoCoTeamChannelId { get; set; }

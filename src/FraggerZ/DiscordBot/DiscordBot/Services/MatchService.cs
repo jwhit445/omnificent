@@ -311,7 +311,7 @@ namespace DiscordBot.Services {
             }
 
             // give all users in queue the ability to write to match channel and connect to voice
-            foreach (SocketGuildUser userCurr in queue.PlayersInQueue) {
+            foreach (IUser userCurr in queue.PlayersInQueue) {
                 await channel.AddPermissionOverwriteAsync(userCurr, new OverwritePermissions().Modify(null, null, null, null, PermValue.Allow));
                 //await preMatchVoice.AddPermissionOverwriteAsync(userCurr, new OverwritePermissions().Modify(null, null, null, null, null, null, null, null, null, null, null, null, PermValue.Allow));
                 await voice1.AddPermissionOverwriteAsync(userCurr, new OverwritePermissions().Modify(null, null, null, PermValue.Allow, null, null, null, null, null, null, null, null, PermValue.Allow));
@@ -320,7 +320,7 @@ namespace DiscordBot.Services {
 
             string announcement = $"Match #{match.MatchNumber} is ready! ";
             // send match embed and announcement to channel and ping users
-            foreach (SocketGuildUser userCurr in queue.PlayersInQueue) {
+            foreach (IUser userCurr in queue.PlayersInQueue) {
                 announcement += (userCurr.Mention + " ");
             }
             await channel.SendMessageAsync(announcement, false, null);
@@ -355,7 +355,7 @@ namespace DiscordBot.Services {
             }
         }
 
-        private async Task<List<User>> SetupAutomaticTeams(Match match, string gameName, PlayerQueue queue) {
+        public async Task<List<User>> SetupAutomaticTeams(Match match, string gameName, PlayerQueue queue) {
             match.MatchStatus = MatchStatus.Playing;
             match.MatchType = MatchType.PUGAuto;
             match.PlayerIdsPool.Clear();
@@ -364,7 +364,7 @@ namespace DiscordBot.Services {
             if(queue.PlayersInQueue.Count > 8) {
                 players = queue.PlayersInQueue.GetRange(0, 8);
             }
-            foreach (SocketGuildUser userCurr in players) {
+            foreach (IUser userCurr in players) {
                 User dbUser = await _userService.GetById(userCurr.Id);
                 if (dbUser == null || dbUser.DiscordId == 0) {
                     throw new Exception("Invalid player in queue");
@@ -372,15 +372,15 @@ namespace DiscordBot.Services {
                 listAllUsers.Add(dbUser);
             }
             listAllUsers.Sort((o1, o2) => {
-                (IUser, IUser)? duo1 = queue.DuoPlayers.FirstOrDefault(x => x.Item1 == o1 || x.Item2 == o1);
-                (IUser, IUser)? duo2 = queue.DuoPlayers.FirstOrDefault(x => x.Item1 == o2 || x.Item2 == o2);
-                if(duo1.HasValue && duo2.HasValue) {
+                (IUser, IUser) duo1 = queue.DuoPlayers.FirstOrDefault(x => x.Item1.Id == o1.DiscordId || x.Item2.Id == o1.DiscordId);
+                (IUser, IUser) duo2 = queue.DuoPlayers.FirstOrDefault(x => x.Item1.Id == o2.DiscordId || x.Item2.Id == o2.DiscordId);
+                if(duo1.Item1 != null && duo2.Item1 != null) {
                     return o1.RoCoMMR > o2.RoCoMMR ? -1 : 1;
                 }
-                if(duo1.HasValue) {
+                if(duo1.Item1 != null) {
                     return -1;
                 }
-                if(duo2.HasValue) {
+                if(duo2.Item2 != null) {
                     return 1;
                 }
                 return o1.RoCoMMR > o2.RoCoMMR ? -1 : 1;
@@ -388,18 +388,32 @@ namespace DiscordBot.Services {
             List<User> team1 = new List<User>();
             List<User> team2 = new List<User>();
             foreach (var user in listAllUsers) {
+                if(team1.Contains(user) || team2.Contains(user)) {
+                    continue;
+                }
                 if (GetTeamMmr(team1) <= GetTeamMmr(team2) && team1.Count < 4) {
                     team1.Add(user);
-                    // if user is in duo, add the duo
+                    AddTeammateIfDuo(team1, queue, user, listAllUsers);
                 }
                 else if(team2.Count < 4) {
                     team2.Add(user);
-                    // if user is in duo, add the duo
+                    AddTeammateIfDuo(team2, queue, user, listAllUsers);
                 }
             }
             match.Team1Ids = team1.Select(x => x.Id).ToList();
             match.Team2Ids = team2.Select(x => x.Id).ToList();
             return listAllUsers;
+        }
+
+        private void AddTeammateIfDuo(List<User> listTeam, PlayerQueue queue, User user, List<User> listAllUsers) {
+            var duo = queue.DuoPlayers.FirstOrDefault(x => x.Item1.Id == user.DiscordId || x.Item2.Id == user.DiscordId);
+            if (duo.Item1 != null) {
+                if (listTeam.Count >= 4) {
+                    throw new Exception("Team is full but has a duo partner");
+                }
+                var teammateId = (duo.Item1.Id == user.DiscordId ? duo.Item2.Id : duo.Item1.Id);
+                listTeam.Add(listAllUsers.First(x => x.DiscordId == teammateId));
+            }
         }
 
         private double GetTeamMmr(List<User> team) {

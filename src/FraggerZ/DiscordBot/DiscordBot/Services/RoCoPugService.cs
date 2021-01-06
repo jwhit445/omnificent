@@ -19,15 +19,17 @@ namespace DiscordBot.Services {
         // Ready system - caches socketguild users of matches who are NOT ready
         private List<Tuple<string, List<SocketGuildUser>>> UnreadyLists { get; set; }
 
-        public Dictionary<IUser, (PlayerQueue queue, IUser player2)> DuoPartners
-            = new Dictionary<IUser, (PlayerQueue queue, IUser player2)>();
+        public Dictionary<ulong, (PlayerQueue queue, ulong player2)> DuoPartners
+            = new Dictionary<ulong, (PlayerQueue queue, ulong player2)>();
 
-        public Dictionary<IUser, (PlayerQueue queue, QueueType queueType)> DuoInviteStarted
-            = new Dictionary<IUser, (PlayerQueue queue, QueueType queueType)>();
+        public Dictionary<ulong, (PlayerQueue queue, QueueType queueType)> DuoInviteStarted
+            = new Dictionary<ulong, (PlayerQueue queue, QueueType queueType)>();
 
         public PlayerQueue NAQueue { get; set; }
         public PlayerQueue NACPlusQueue { get; set; }
         public PlayerQueue EUQueue { get; set; }
+
+        public Dictionary<ulong, PlayerQueue> DictQueueForChannel { get; set; } = new Dictionary<ulong, PlayerQueue>();
 
         private readonly MatchService _matchService;
         private readonly EmbedService _embedService;
@@ -46,9 +48,12 @@ namespace DiscordBot.Services {
         }
 
         public void Init(DiscordSocketClient client) {
-            NAQueue = new PlayerQueue(client.GetChannel(_channelSettings.RoCoNAQueueChannelId) as SocketTextChannel);
-            NACPlusQueue = new PlayerQueue(client.GetChannel(_channelSettings.RoCoNAQueueCPlusUpChannelId) as SocketTextChannel);
-            EUQueue = new PlayerQueue(client.GetChannel(_channelSettings.RoCoEUQueueChannelId) as SocketTextChannel);
+            NAQueue = new PlayerQueue(client.GetChannel(_channelSettings.RoCoNAQueueChannelId) as SocketTextChannel, "NA", QueueType.NAMain);
+            NACPlusQueue = new PlayerQueue(client.GetChannel(_channelSettings.RoCoNAQueueCPlusUpChannelId) as SocketTextChannel, "NA", QueueType.NACPlus);
+            EUQueue = new PlayerQueue(client.GetChannel(_channelSettings.RoCoEUQueueChannelId) as SocketTextChannel, "EU", QueueType.EUMain);
+            DictQueueForChannel.Add(_channelSettings.RoCoNAQueueChannelId, NAQueue);
+            DictQueueForChannel.Add(_channelSettings.RoCoNAQueueCPlusUpChannelId, NACPlusQueue);
+            DictQueueForChannel.Add(_channelSettings.RoCoEUQueueChannelId, EUQueue);
         }
 
         public int GetUnreadyUserTotal(Match match) {
@@ -283,62 +288,79 @@ namespace DiscordBot.Services {
         }
 
         async Task JoinToQueue(PlayerQueue queue, SocketGuildUser user, SocketTextChannel channel, string region) {
-            foreach (SocketGuildUser userCurr in queue.PlayersInQueue) {
+            foreach (IUser userCurr in queue.PlayersInQueue) {
                 if (userCurr.Id == user.Id) {
                     return;
                 }
             }
 
-            var messages = await channel.GetMessagesAsync(1).FlattenAsync();
-            var message = messages.FirstOrDefault();
-            if (message == null) {
-                message = channel.GetCachedMessages(1).FirstOrDefault();
-            }
-            if (!await CanUserJoinQueue(user, message, channel.Id)) {
-                return;
-            }
-            if (!dictUserQueueTimes.ContainsKey(user.Id)) {
-                dictUserQueueTimes.Add(user.Id, DateTime.UtcNow);
-            }
-            dictUserQueueTimes[user.Id] = DateTime.UtcNow;
-            queue.PlayersInQueue.Add(user);
-            await TryStartMatch(queue, message, channel, region);
-        }
-
-        async Task JoinDuoToQueue(PlayerQueue queue, (IUser p1, IUser p2) duo, SocketTextChannel channel, string region) {
-            foreach (SocketGuildUser userCurr in queue.PlayersInQueue) {
-                if (userCurr.Id == duo.p1.Id || userCurr.Id == duo.p2.Id) {
+            try {
+                var messages = await channel.GetMessagesAsync(1).FlattenAsync();
+                var message = messages.FirstOrDefault();
+                if (message == null) {
+                    message = channel.GetCachedMessages(1).FirstOrDefault();
+                }
+                if (!await CanUserJoinQueue(user, message, channel.Id)) {
                     return;
                 }
+                if (!dictUserQueueTimes.ContainsKey(user.Id)) {
+                    dictUserQueueTimes.Add(user.Id, DateTime.UtcNow);
+                }
+                dictUserQueueTimes[user.Id] = DateTime.UtcNow;
+                queue.PlayersInQueue.Add(user);
+                await TryStartMatch(queue, message, channel, region);
             }
-
-            var messages = await channel.GetMessagesAsync(1).FlattenAsync();
-            var message = messages.FirstOrDefault();
-            if (message == null) {
-                message = channel.GetCachedMessages(1).FirstOrDefault();
-            }
-            if (!await CanUserJoinQueue(duo.p1, message, channel.Id) || !await CanUserJoinQueue(duo.p2, message, channel.Id)) {
+            catch (Exception ex) {
+                var msg = ex.Message;
                 return;
             }
-            if (!dictUserQueueTimes.ContainsKey(duo.p1.Id)) {
-                dictUserQueueTimes.Add(duo.p1.Id, DateTime.UtcNow);
+        }
+
+        async Task JoinDuoToQueue(PlayerQueue queue, (IUser p1, IUser p2) duo) {
+            try {
+                foreach (IUser userCurr in queue.PlayersInQueue) {
+                    if (userCurr.Id == duo.p1.Id || userCurr.Id == duo.p2.Id) {
+                        return;
+                    }
+                }
             }
-            if (!dictUserQueueTimes.ContainsKey(duo.p2.Id)) {
-                dictUserQueueTimes.Add(duo.p2.Id, DateTime.UtcNow);
+            catch (Exception ex) {
+                var msg = ex.Message;
+                return;
             }
-            dictUserQueueTimes[duo.p1.Id] = DateTime.UtcNow;
-            dictUserQueueTimes[duo.p2.Id] = DateTime.UtcNow;
-            queue.PlayersInQueue.Add(duo.p1);
-            queue.PlayersInQueue.Add(duo.p2);
-            queue.DuoPlayers.Add(duo);
-            await TryStartMatch(queue, message, channel, region);
+
+            try {
+                var messages = await queue.Channel.GetMessagesAsync(1).FlattenAsync();
+                var message = messages.FirstOrDefault();
+                if (message == null) {
+                    message = queue.Channel.GetCachedMessages(1).FirstOrDefault();
+                }
+                if (!await CanUserJoinQueue(duo.p1, message, queue.Channel.Id) || !await CanUserJoinQueue(duo.p2, message, queue.Channel.Id)) {
+                    return;
+                }
+                if (!dictUserQueueTimes.ContainsKey(duo.p1.Id)) {
+                    dictUserQueueTimes.Add(duo.p1.Id, DateTime.UtcNow);
+                }
+                if (!dictUserQueueTimes.ContainsKey(duo.p2.Id)) {
+                    dictUserQueueTimes.Add(duo.p2.Id, DateTime.UtcNow);
+                }
+                dictUserQueueTimes[duo.p1.Id] = DateTime.UtcNow;
+                dictUserQueueTimes[duo.p2.Id] = DateTime.UtcNow;
+                queue.PlayersInQueue.Add(duo.p1);
+                queue.PlayersInQueue.Add(duo.p2);
+                queue.DuoPlayers.Add(duo);
+                await TryStartMatch(queue, message, queue.Channel, queue.Region);
+            }
+            catch (Exception ex) {
+                var msg = ex.Message;
+                return;
+            }
         }
 
         private async Task TryStartMatch(PlayerQueue queue, IMessage queueMessage, SocketTextChannel channel, string region) {
             if (queue.PlayersInQueue.Count >= 8) {
                 try {
                     await queueMessage.RemoveAllReactionsAsync();
-                    await _embedService.UpdateQueueEmbed(new List<IUser>(), channel, true);
                     await _matchService.GeneratePUG("Rogue Company", channel, queue, region);
                 }
                 catch (Exception e) {
@@ -346,12 +368,16 @@ namespace DiscordBot.Services {
                 }
                 finally {
                     queue.PlayersInQueue.Clear();
+                    queue.DuoPlayers.Clear();
+                    await _embedService.UpdateQueueEmbed(queue, channel, true);
                     await queueMessage.AddReactionAsync(new Emoji(_emoteSettings.PlayEmoteUnicode));
-                    await queueMessage.AddReactionAsync(new Emoji(_emoteSettings.PlayDuoEmoteUnicode));
+                    if (queue.QueueType != QueueType.NACPlus) {
+                        await queueMessage.AddReactionAsync(new Emoji(_emoteSettings.PlayDuoEmoteUnicode));
+                    }
                 }
             }
             else {
-                await _embedService.UpdateQueueEmbed(queue.PlayersInQueue, channel);
+                await _embedService.UpdateQueueEmbed(queue, channel);
             }
         }
 
@@ -404,15 +430,15 @@ namespace DiscordBot.Services {
             string queueName;
             switch (queueType) {
                 case QueueType.NAMain:
-                    DuoInviteStarted[user] = (NAQueue, queueType);
+                    DuoInviteStarted[user.Id] = (NAQueue, queueType);
                     queueName = "NA - Main";
                     break;
                 case QueueType.NACPlus:
-                    DuoInviteStarted[user] = (NACPlusQueue, queueType);
+                    DuoInviteStarted[user.Id] = (NACPlusQueue, queueType);
                     queueName = "NA - C+ and up";
                     break;
                 case QueueType.EUMain:
-                    DuoInviteStarted[user] = (EUQueue, queueType);
+                    DuoInviteStarted[user.Id] = (EUQueue, queueType);
                     queueName = "EU - Main";
                     break;
                 default:
@@ -421,38 +447,13 @@ namespace DiscordBot.Services {
             await user.SendMessageAsync(null, false, _embedService.StartDuoMessage(queueName));
         }
 
-        public async Task InviteDuoPartner(QueueType queueType, IUser user) {
-            string queueName = "";
-            switch (queueType) {
-                case QueueType.NAMain:
-                    DuoPartners[user] = (NAQueue, null);
-                    queueName = "NA - Main";
-                    break;
-                case QueueType.NACPlus:
-                    DuoPartners[user] = (NACPlusQueue, null);
-                    queueName = "NA - C+ and up";
-                    break;
-                case QueueType.EUMain:
-                    DuoPartners[user] = (EUQueue, null);
-                    queueName = "EU - Main";
-                    break;
-                default:
-                    throw new ArgumentException($"Invalid queueType: {queueType}");
-            }
-            var message = await user.SendMessageAsync(null, false, _embedService.InviteDuo(queueName, user));
-            await message.AddReactionsAsync(new IEmote[] { new Emoji(_emoteSettings.CheckEmoteUnicode), new Emoji(_emoteSettings.XEmoteUnicode) });
+        public async Task FinalizeDuoPartners(PlayerQueue queue, ulong player1, ulong player2) {
+            SocketGuildUser p1 = queue.Channel.GetUser(player1);
+            SocketGuildUser p2 = queue.Channel.GetUser(player2);
+            await JoinDuoToQueue(queue, (p1, p2));
+            await p1.SendMessageAsync(embed: _embedService.DuoQueueJoined(queue.Channel.Name, p2));
+            await p2.SendMessageAsync(embed: _embedService.DuoQueueJoined(queue.Channel.Name, p1));
         }
-
-        public async Task FinalizeDuoPartners(PlayerQueue queue, IUser player1, IUser player2) {
-            //TODO: create a rocoPugService.JoinDuo method that code shares all of the if queue popped code, and handles the 9/8 potential queue size situation
-            //queue.PlayersInQueue.AddRange(new List<IUser>() { player1, player2 });
-            //queue.DuoPlayers.Add((player1, player2));
-
-            await player1.SendMessageAsync(embed: _embedService.DuoQueueJoined(queue.Channel.Name, player2));
-            await player2.SendMessageAsync(embed: _embedService.DuoQueueJoined(queue.Channel.Name, player1));
-        }
-
-
 
         /// <summary>
         /// Leave the NA or EU pug queue.
@@ -466,10 +467,41 @@ namespace DiscordBot.Services {
                     if (queue.PlayersInQueue[i].Id == user.Id) {
                         queue.PlayersInQueue.RemoveAt(i);
 
-                        await _embedService.UpdateQueueEmbed(queue.PlayersInQueue, channel);
+                        await _embedService.UpdateQueueEmbed(queue, channel);
                         return;
                     }
                 }
+            }
+
+            if (socketTextChannel.Id == _channelSettings.RoCoNAQueueCPlusUpChannelId) {
+                await LeaveFromQueue(NACPlusQueue, socketGuildUser, socketTextChannel);
+            }
+            if (region == "NA") {
+                await LeaveFromQueue(NAQueue, socketGuildUser, socketTextChannel);
+            }
+            else if (region == "EU") {
+                await LeaveFromQueue(EUQueue, socketGuildUser, socketTextChannel);
+            }
+        }
+
+        public async Task LeaveDuo(string region, SocketGuildUser socketGuildUser, SocketTextChannel socketTextChannel) {
+            async Task LeaveFromQueue(PlayerQueue queue, SocketGuildUser user, SocketTextChannel channel) {
+                (IUser, IUser)? duo = null;
+                for(int i = 0;i < queue.DuoPlayers.Count; i++) {
+                    if(queue.DuoPlayers[i].Item1.Id == user.Id || queue.DuoPlayers[i].Item2.Id == user.Id) {
+                        duo = queue.DuoPlayers[i];
+                        queue.DuoPlayers.RemoveAt(i);
+                    }
+                }
+                if(!duo.HasValue) {
+                    return;
+                }
+                for (int i = 0; i < queue.PlayersInQueue.Count; i++) {
+                    if (queue.PlayersInQueue[i].Id == duo.Value.Item1.Id || queue.PlayersInQueue[i].Id == duo.Value.Item2.Id) {
+                        queue.PlayersInQueue.RemoveAt(i);
+                    }
+                }
+                await _embedService.UpdateQueueEmbed(queue, channel);
             }
 
             if (socketTextChannel.Id == _channelSettings.RoCoNAQueueCPlusUpChannelId) {
@@ -487,10 +519,12 @@ namespace DiscordBot.Services {
 
     public class PlayerQueue {
         public SocketTextChannel Channel { get; }
+        public QueueType QueueType { get; }
+        public string Region { get; }
         public List<IUser> PlayersInQueue { get; } = new List<IUser>();
         public List<(IUser, IUser)> DuoPlayers { get; } = new List<(IUser, IUser)>();
 
-        public PlayerQueue(SocketTextChannel channel) => Channel = channel;
+        public PlayerQueue(SocketTextChannel channel, string region, QueueType type) => (Channel, Region, QueueType) = (channel, region, type);
     }
 
     public enum QueueType {
