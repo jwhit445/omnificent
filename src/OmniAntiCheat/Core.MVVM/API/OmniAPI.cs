@@ -43,7 +43,7 @@ namespace Core.Omni.API {
 
 		///<summary>Returns statuses for the given users.</summary>
 		public async Task<GetUserStatusesResponse> GetUserStatuses(GetUserStatusesRequest request) {
-			return await RunApiCall<GetUserStatusesResponse, GetUserStatusesRequest>($"{API_BASE_URL}logevent/getmany", HttpMethod.POST, request);
+			return await RunApiCall<GetUserStatusesResponse, GetUserStatusesRequest>($"{API_BASE_URL}user/statuses", HttpMethod.POST, request);
 		}
 
 		private async Task<T> RunApiCall<T, R>(string url, HttpMethod method, R body = null) where R: class {
