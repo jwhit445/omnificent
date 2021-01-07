@@ -1,10 +1,11 @@
-﻿using OmniAntiCheat.Windows;
+﻿using System;
+using System.Diagnostics;
+using System.Windows;
+using Core.Omni.API;
+using OmniAntiCheat.Windows;
 using Prism.Ioc;
 using Prism.Mvvm;
 using Prism.Unity;
-using System;
-using System.Diagnostics;
-using System.Windows;
 
 namespace OmniAntiCheat {
 	///<summary>Interaction logic for App.xaml</summary>
@@ -15,7 +16,9 @@ namespace OmniAntiCheat {
 		}
 
 		protected override void RegisterTypes(IContainerRegistry containerRegistry) {
-			containerRegistry.Register<MainWindow>();
+			containerRegistry
+				.Register<IOmniAPI, OmniAPI>()
+				.Register<MainWindow>();
 		}
 
 		protected override void ConfigureViewModelLocator() {

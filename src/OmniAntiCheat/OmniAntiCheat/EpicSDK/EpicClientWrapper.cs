@@ -2,6 +2,7 @@
 using Epic.OnlineServices;
 using Epic.OnlineServices.Auth;
 using Epic.OnlineServices.Platform;
+using Epic.OnlineServices.UserInfo;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,6 +69,20 @@ namespace OmniAntiCheat.EpicSDK {
 			});
 			await slim.WaitAsync();
 			return retVal;
+		}
+
+		///<summary>Returns the username of the given account if possible. Returns null if none.</summary>
+		public string GetUsername(EpicAccountId epicAccount) {
+			CopyUserInfoOptions options = new CopyUserInfoOptions();
+			options.LocalUserId = epicAccount;
+			options.TargetUserId = epicAccount;
+			var result = _platform.GetUserInfoInterface().CopyUserInfo(options, out UserInfoData outUserInfo);
+			if(result == Result.Success) {
+				return outUserInfo.DisplayName;
+			}
+			else {
+				return "";
+			}
 		}
 
 		private void StopSDK() {

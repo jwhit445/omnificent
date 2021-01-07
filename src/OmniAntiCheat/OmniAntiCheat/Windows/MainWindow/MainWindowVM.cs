@@ -1,5 +1,7 @@
 ﻿using Core;
 using Core.Extensions;
+using Core.Omni.API;
+using Core.Omni.API.Models;
 using Core.Omni.MVVM;
 using Core.Omni.Utilities;
 using Epic.OnlineServices;
@@ -37,6 +39,7 @@ namespace OmniAntiCheat.Windows {
 		private Action _onRogueCompanyClosed = null;
 		private string _scrapedEpicID = "";
 		private EpicClientWrapper _epicClient = null;
+		private IOmniAPI _omniAPI { get; }
 
 		public string EpicID {
 			get { return GetBindableProperty(() => EpicID, ""); }
@@ -83,7 +86,8 @@ namespace OmniAntiCheat.Windows {
 			}
 		}
 
-		public MainWindowVM() {
+		public MainWindowVM(IOmniAPI omniAPI) {
+			_omniAPI = omniAPI;
 			CheckForMossInstallation();
 			CheckScrapedEpicID();
 			_epicClient = new EpicClientWrapper();
@@ -164,19 +168,38 @@ namespace OmniAntiCheat.Windows {
 
 		private async Task Login(LoginCredentialType credentialType, bool isSilent = false) {
 			IsLoggingIn = true;
-			LoginCallbackInfo retVal = await _epicClient.Login(credentialType);
-			IsLoggingIn = false;
-			if(retVal.ResultCode != Result.Success) {
-				if(!isSilent) {
-					MessageBox.Show($"Login unsuccessful. Error: {retVal.ResultCode}");
+			try {
+				LoginCallbackInfo retVal = await _epicClient.Login(credentialType);
+				if(retVal.ResultCode != Result.Success) {
+					if(!isSilent) {
+						MessageBox.Show($"Login unsuccessful. Error: {retVal.ResultCode}");
+					}
+					return;
 				}
-				return;
+				retVal.LocalUserId.ToString(out string epicID);
+				string username = _epicClient.GetUsername(retVal.LocalUserId);
+				//Now we need to successfully hit our register user endpoint before letting them through.
+				try {
+					UpsertUserResponse response = await _omniAPI.UpsertUser(new UpsertUserRequest {
+						User = new User {
+							EpicID = epicID,
+							Username = username,
+						}
+					});
+					_omniAPI.AuthToken = response.AuthorizationToken;
+				}
+				catch(Exception e) {
+					MessageBox.Show($"Unable to login with Omni API. {e.Message}");
+					return;
+				}
+				EpicID = epicID;
+				IsLoggedIn = true;
+				if(!string.IsNullOrWhiteSpace(_scrapedEpicID) && EpicID != _scrapedEpicID && !isSilent) {
+					MessageBox.Show("Different Epic ID scraped then used to log in.");
+				}
 			}
-			retVal.LocalUserId.ToString(out string epicID);
-			EpicID = epicID;
-			IsLoggedIn = true;
-			if(!string.IsNullOrWhiteSpace(_scrapedEpicID) && EpicID != _scrapedEpicID && !isSilent) {
-				MessageBox.Show("Different Epic ID scraped then used to log in.");
+			finally {
+				IsLoggingIn = false;
 			}
 		}
 

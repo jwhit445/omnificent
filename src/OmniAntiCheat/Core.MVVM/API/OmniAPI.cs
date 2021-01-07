@@ -8,40 +8,30 @@ using Newtonsoft.Json;
 
 namespace Core.Omni.API {
 
-	public class OmniAPI {
+	public class OmniAPI : IOmniAPI {
 
 		private const string API_BASE_URL = "https://google.com/";
 
-		private HttpClient _client { get; }
+		private HttpClient _client { get; } = new HttpClient();
 
-		///<summary>The auth token used for API calls.</summary>
 		public string AuthToken { get; set; }
 
-		public OmniAPI(IHttpClientFactory httpClientFactory) {
-			_client = httpClientFactory.CreateClient();
-		}
-
-		///<summary>Upserts the user info and returns an authentication token if successful.</summary>
 		public async Task<UpsertUserResponse> UpsertUser(UpsertUserRequest request) {
 			return await RunApiCall<UpsertUserResponse, UpsertUserRequest>($"{API_BASE_URL}user", HttpMethod.PUT, request);
 		}
 
-		///<summary>Uploads the state of the current user. Must be authenticated.</summary>
 		public async Task UploadUserInfo(UploadUserInfoRequest request) {
 			await RunApiCall<string, UploadUserInfoRequest>($"{API_BASE_URL}user/info", HttpMethod.POST, request);
 		}
 
-		///<summary>Returns the URL needed to upload files to S3.</summary>
 		public async Task<GetS3UrlResponse> GetS3UrlForLogs() {
 			return await RunApiCall<GetS3UrlResponse, string>($"{API_BASE_URL}logevent/url", HttpMethod.GET);
 		}
 
-		///<summary>Returns logs for the given users.</summary>
 		public async Task<GetLogsForUserResponse> GetLogsForUsers(GetLogsForUserRequest request) {
 			return await RunApiCall<GetLogsForUserResponse, GetLogsForUserRequest>($"{API_BASE_URL}logevent/getmany", HttpMethod.POST, request);
 		}
 
-		///<summary>Returns statuses for the given users.</summary>
 		public async Task<GetUserStatusesResponse> GetUserStatuses(GetUserStatusesRequest request) {
 			return await RunApiCall<GetUserStatusesResponse, GetUserStatusesRequest>($"{API_BASE_URL}user/statuses", HttpMethod.POST, request);
 		}
