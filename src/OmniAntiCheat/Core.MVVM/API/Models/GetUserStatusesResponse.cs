@@ -3,7 +3,14 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace Core.Omni.API.Models {
-	public class GetUserStatusResponse {
+	public class GetUserStatusesResponse {
+
+		///<summary>A dictionary of users to their statuses.</summary>
+		public Dictionary<User, UserStatus> UserStatuses { get; set; }
+
+	}
+
+	public class UserStatus {
 
 		///<summary>The last heartbeat of the user in UTC.</summary>
 		public DateTime LastHeartbeat { get; set; }
