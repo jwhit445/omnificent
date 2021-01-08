@@ -17,7 +17,7 @@ namespace OmniAntiCheat {
 
 		protected override void RegisterTypes(IContainerRegistry containerRegistry) {
 			containerRegistry
-				.Register<IOmniAPI, OmniAPI>()
+				.Register<IOmniAPI, OmniAPIMock>()
 				.Register<MainWindow>();
 		}
 

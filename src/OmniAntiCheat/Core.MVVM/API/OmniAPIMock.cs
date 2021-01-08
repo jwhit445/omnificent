@@ -1,23 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Core.Omni.API.Models;
 
 namespace Core.Omni.API {
 	public class OmniAPIMock : IOmniAPI {
-		public string AuthToken {
-			get {
-				throw new NotImplementedException();
-			}
 
-			set {
-				throw new NotImplementedException();
-			}
-		}
+		public string AuthToken { get; set; }
 
 		public Task<GetLogsForUserResponse> GetLogsForUsers(GetLogsForUserRequest request) {
-			throw new NotImplementedException();
+			return Task.FromResult(new GetLogsForUserResponse {
+				RecentUserEvents = new Dictionary<User, List<LogEvent>> {
+					{ new User() { }, new List<LogEvent> { } },
+				},
+			});
 		}
 
 		public Task<GetS3UrlResponse> GetS3UrlForLogs() {
@@ -29,11 +25,13 @@ namespace Core.Omni.API {
 		}
 
 		public Task UploadUserInfo(UploadUserInfoRequest request) {
-			throw new NotImplementedException();
+			return Task.CompletedTask;
 		}
 
 		public Task<UpsertUserResponse> UpsertUser(UpsertUserRequest request) {
-			throw new NotImplementedException();
+			return Task.FromResult(new UpsertUserResponse {
+				AuthorizationToken = "AuthToken",
+			});
 		}
 	}
 }

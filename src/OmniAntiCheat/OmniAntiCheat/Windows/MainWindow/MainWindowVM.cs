@@ -1,4 +1,5 @@
-﻿using Core;
+﻿using Amazon.S3.Transfer;
+using Core;
 using Core.Extensions;
 using Core.Omni.API;
 using Core.Omni.API.Models;
@@ -32,6 +33,8 @@ namespace OmniAntiCheat.Windows {
 		private const string RUNNING_STRING = "Running...";
 		private const string FINDING_PROCESS = "Finding Process...";
 		private const int GAME_POLLING_SECONDS = 3;
+		private const int HEARTBEAT_UNCHANGED_INTERVAL = 30;
+		private const int HEARTBEAT_POLLING_INTERVAL = 2;
 
 		private string _mossLocation = null;
 		private Process _mossCurrentProcess = null;
@@ -39,6 +42,9 @@ namespace OmniAntiCheat.Windows {
 		private Action _onRogueCompanyClosed = null;
 		private string _scrapedEpicID = "";
 		private EpicClientWrapper _epicClient = null;
+		private DateTime _lastHeartbeatSent = DateTime.MinValue;
+		private bool _previousIsMossRunning = false;
+		private bool _previousIsGameRunning = false;
 		private IOmniAPI _omniAPI { get; }
 
 		public string EpicID {
@@ -170,9 +176,9 @@ namespace OmniAntiCheat.Windows {
 			IsLoggingIn = true;
 			try {
 				LoginCallbackInfo retVal = await _epicClient.Login(credentialType);
-				if(retVal.ResultCode != Result.Success) {
+				if(retVal?.ResultCode != Result.Success) {
 					if(!isSilent) {
-						MessageBox.Show($"Login unsuccessful. Error: {retVal.ResultCode}");
+						MessageBox.Show($"Login unsuccessful. Error: {retVal?.ResultCode.ToString() ?? "NULL"}");
 					}
 					return;
 				}
@@ -194,6 +200,8 @@ namespace OmniAntiCheat.Windows {
 				}
 				EpicID = epicID;
 				IsLoggedIn = true;
+				//Start the heartbeats going.
+				TaskUtils.FireAndForget(StartHeartbeatEvents());
 				if(!string.IsNullOrWhiteSpace(_scrapedEpicID) && EpicID != _scrapedEpicID && !isSilent) {
 					MessageBox.Show("Different Epic ID scraped then used to log in.");
 				}
@@ -240,6 +248,15 @@ namespace OmniAntiCheat.Windows {
 					MessageBox.Show($"Unable to open zip file. Error Message: {e.Message}");
 					return;
 				}
+				string amazonUploadUrl = "";
+				try {
+					GetS3UrlResponse response = await _omniAPI.GetS3UrlForLogs();
+					amazonUploadUrl = response.SignedS3Url;
+				}
+				catch(Exception e) {
+					MessageBox.Show($"Error retrieving URL: {e.Message}");
+					return;
+				}
 				List<Func<Task>> listUploadTasks = new List<Func<Task>>();
 				byte[] data = new byte[4096];
 				ZipEntry zipEntry = null;
@@ -254,7 +271,7 @@ namespace OmniAntiCheat.Windows {
 					}
 					listUploadTasks.Add(async () => {
 						try {
-							await UploadBytesToAmazon(fileName, fileBytes.ToArray());
+							await UploadBytesToAmazon(amazonUploadUrl, fileName, fileBytes.ToArray());
 						}
 						catch(Exception e) {
 							listErrorMessages.Add($"File: {fileName} failed to upload. Error Message: {e.Message}");
@@ -277,9 +294,35 @@ namespace OmniAntiCheat.Windows {
 			}
 		}
 
-		private async Task UploadBytesToAmazon(string fileName, byte[] bytes) {
+		private async Task UploadBytesToAmazon(string amazonUrl, string fileName, byte[] bytes) {
 			//Todo: Implement endpoint. May need to change to allow organizing in S3 such as organizing by date, match id, epic username, etc.
 			await Task.CompletedTask;
+		}
+
+		///<summary>Begins indefinitely sending heartbeats to the server about the status of this client.</summary>
+		private async Task StartHeartbeatEvents() {
+			while(true) {
+				DateTime timeNow = DateTime.Now;
+				bool isMossRunning = MossStatus != NA_STRING;
+				bool isGameRunning = GameStatus != NA_STRING;
+				//Either it's been too long since the last heartbeat or something changed from last time.
+				if(_lastHeartbeatSent.AddSeconds(HEARTBEAT_UNCHANGED_INTERVAL) < timeNow
+					|| _previousIsMossRunning != isMossRunning
+					|| _previousIsGameRunning != isGameRunning) 
+				{
+					//If this throws from the api call, it will not update the datetime or _previous variables.
+					await ExUtils.SwallowAnyExceptionAsync(async () => {
+						await _omniAPI.UploadUserInfo(new UploadUserInfoRequest {
+							IsMossRunning = isMossRunning,
+							IsRogueCompanyRunning = isGameRunning,
+						});
+						_lastHeartbeatSent = timeNow;
+						_previousIsMossRunning = isMossRunning;
+						_previousIsGameRunning = isGameRunning;
+					});
+				}
+				await Task.Delay(TimeSpan.FromSeconds(HEARTBEAT_POLLING_INTERVAL));
+			}
 		}
 
 		///<summary>Indefinitely polls for the game process closing and opening. We do not use the Process class events because technically the
