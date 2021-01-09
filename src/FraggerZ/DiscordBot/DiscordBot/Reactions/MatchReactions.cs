@@ -44,6 +44,11 @@ namespace DiscordBot.Reactions
                 {
                     var queue = _rocoPugService.DuoPartners[user.Id].queue;
                     await _rocoPugService.FinalizeDuoPartners(queue, user.Id, _rocoPugService.DuoPartners[user.Id].player2);
+                    try {
+                        _rocoPugService.DuoInviteStarted.Remove(_rocoPugService.DuoPartners[user.Id].player2);
+                        _rocoPugService.DuoPartners.Remove(user.Id);
+                    }
+                    catch (Exception) { }
                 }
             }
             else if(reaction.Emote.Name == _emoteSettings.XEmoteName)

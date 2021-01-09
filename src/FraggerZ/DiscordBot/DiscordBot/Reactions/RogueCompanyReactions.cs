@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DiscordBot.Settings;
 using DiscordBot.Services;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
 
 namespace DiscordBot.Reactions
 {
@@ -23,7 +24,18 @@ namespace DiscordBot.Reactions
         public async Task HandleReactionAddedAsync(Cacheable<IUserMessage,
            ulong> message, SocketTextChannel channel, SocketReaction reaction)
         {
+            var listQueueChannels = new List<ulong>() {
+                _channelSettings.RoCoEUQueueChannelId,
+                _channelSettings.RoCoNAQueueChannelId,
+                _channelSettings.RoCoNAQueueCPlusUpChannelId
+            };
+            if (!listQueueChannels.Contains(channel.Id)) {
+                return;
+            }
             var user = channel.GetUser(reaction.UserId);
+            if(user == null) {
+                return;
+            }
             string region = "NA";
             QueueType type = QueueType.NAMain;
             if(channel.Id == _channelSettings.RoCoNAQueueCPlusUpChannelId)

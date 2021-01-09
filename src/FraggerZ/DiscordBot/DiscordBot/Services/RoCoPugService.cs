@@ -275,7 +275,9 @@ namespace DiscordBot.Services {
         /// </summary>
         /// <param name="region">NA or EU</param>
         public async Task Join(string region, SocketGuildUser socketGuildUser, SocketTextChannel socketTextChannel) {
-
+            if(socketGuildUser == null) {
+                return;
+            }
             if (socketTextChannel.Id == _channelSettings.RoCoNAQueueCPlusUpChannelId) {
                 await JoinToQueue(NACPlusQueue, socketGuildUser, socketTextChannel, "NA");
             }
@@ -371,7 +373,7 @@ namespace DiscordBot.Services {
                     queue.DuoPlayers.Clear();
                     await _embedService.UpdateQueueEmbed(queue, channel, true);
                     await queueMessage.AddReactionAsync(new Emoji(_emoteSettings.PlayEmoteUnicode));
-                    if (queue.QueueType != QueueType.NACPlus) {
+                    if (queue.QueueType == QueueType.NAMain) {
                         await queueMessage.AddReactionAsync(new Emoji(_emoteSettings.PlayDuoEmoteUnicode));
                     }
                 }
@@ -382,11 +384,18 @@ namespace DiscordBot.Services {
         }
 
         private async Task<bool> CanUserJoinQueue(IUser user, IMessage queueMessage, ulong channelId) {
+            if(user == null) {
+                return false;
+            }
             if (await IsFrozenFromJoining(user, queueMessage)) {
                 return false;
             }
             // check null user
             User dbUser = await _userService.GetById(user.Id);
+            if (dbUser == null) {
+                await _userService.Register(user);
+                dbUser = await _userService.GetById(user.Id);
+            }
             if (dbUser == null) {
                 await user.SendMessageAsync($"Can't find your user in the database. Please go to #register and toggle the reaction and try again.");
                 await queueMessage.RemoveReactionAsync(new Emoji(_emoteSettings.PlayEmoteUnicode), user);
@@ -462,6 +471,9 @@ namespace DiscordBot.Services {
         /// <param name="socketGuildUser"></param>
         /// <param name="socketTextChannel"></param>
         public async Task Leave(string region, SocketGuildUser socketGuildUser, SocketTextChannel socketTextChannel) {
+            if(socketGuildUser == null) {
+                return;
+            }
             async Task LeaveFromQueue(PlayerQueue queue, SocketGuildUser user, SocketTextChannel channel) {
                 for (int i = 0; i < queue.PlayersInQueue.Count; i++) {
                     if (queue.PlayersInQueue[i].Id == user.Id) {
@@ -486,6 +498,9 @@ namespace DiscordBot.Services {
 
         public async Task LeaveDuo(string region, SocketGuildUser socketGuildUser, SocketTextChannel socketTextChannel) {
             async Task LeaveFromQueue(PlayerQueue queue, SocketGuildUser user, SocketTextChannel channel) {
+                if(user == null) {
+                    return;
+                }
                 (IUser, IUser)? duo = null;
                 for(int i = 0;i < queue.DuoPlayers.Count; i++) {
                     if(queue.DuoPlayers[i].Item1.Id == user.Id || queue.DuoPlayers[i].Item2.Id == user.Id) {

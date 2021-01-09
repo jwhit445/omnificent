@@ -19,9 +19,9 @@ namespace DiscordBot.Settings
                 "Windward",
                 "Factory",
                 "Canals",
-                "Skyfell",
-                "Glacier",
-                "The Arena"
+                "Skyfell"
+                //"Glacier",
+                //"The Arena"
             }, new List<string>()
             {
                 "https://static.wikia.nocookie.net/roguecompany/images/a/ae/Favelas.jpeg/revision/latest/scale-to-width-down/310?cb=20200725034307",
@@ -32,9 +32,9 @@ namespace DiscordBot.Settings
                 "https://static.wikia.nocookie.net/roguecompany/images/a/ae/Windward.jpeg/revision/latest/scale-to-width-down/310?cb=20200725003153",
                 "https://static.wikia.nocookie.net/roguecompany/images/e/e7/Factory.jpeg/revision/latest/scale-to-width-down/310?cb=20200725042450",
                 "https://static.wikia.nocookie.net/roguecompany/images/b/b4/Canals.jpeg/revision/latest/scale-to-width-down/310?cb=20200730035022",
-                "https://static.wikia.nocookie.net/roguecompany/images/9/96/Skyfell.jpeg/revision/latest/scale-to-width-down/310?cb=20200725003918",
-                "https://www.pcinvasion.com/wp-content/uploads/2020/11/Rogue-Company-new-map-Glacier.jpg",
-                "https://cdn2.unrealengine.com/roco-egs-ob-51-featuredimage-pose-1920x1080-gt-1920x1080-228503862.jpg"
+                "https://static.wikia.nocookie.net/roguecompany/images/9/96/Skyfell.jpeg/revision/latest/scale-to-width-down/310?cb=20200725003918"
+                //"https://www.pcinvasion.com/wp-content/uploads/2020/11/Rogue-Company-new-map-Glacier.jpg",
+                //"https://cdn2.unrealengine.com/roco-egs-ob-51-featuredimage-pose-1920x1080-gt-1920x1080-228503862.jpg"
             }, 4),
 
             new Game("CrossFire", new List<string>()

@@ -120,7 +120,7 @@ public class StatsModule : ModuleBase<SocketCommandContext>
 		}
 
 		var user = await _userService.GetById(Context.User.Id);
-		if(user.DateTimeLastStatReset.Month == DateTime.Now.Month) {
+		if(user.DateTimeLastStatReset.Year == DateTime.Now.Year && user.DateTimeLastStatReset.Month == DateTime.Now.Month) {
 			EmbedBuilder builder = new EmbedBuilder() { Color = Color.Green, Description = "You've already used your stat reset this month." };
 			var errorMessage = await Context.Channel.SendMessageAsync(null, false, builder.Build());
 			await errorMessage.DeleteAfter(5000);

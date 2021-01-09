@@ -206,15 +206,18 @@ namespace DiscordBot.Services
                 {
                     break;
                 }
-                if(_userService.GetTier(users[i]) == "U" || channel.GetUser(users[i].DiscordId) == null)
+                if(_userService.GetTier(users[i]) == "U")
                 {
                     //The user likely left the Discord server. We can't show them.
                     continue;
                 }
+                if(channel.GetUser(users[i].DiscordId) == null) {
+                    continue;
+                }
                 count++;
                 if (users[i].IGN == null)
-                    description += $"`#{i+1}` - {channel.GetUser(users[i].DiscordId).Mention} - **({_userService.GetTier(users[i])})**\n";
-                else description += $"`#{i + 1}` - {channel.GetUser(users[i].DiscordId).Mention} - `{users[i].IGN}` - **({_userService.GetTier(users[i])})**\n";
+                    description += $"`#{count}` - {channel.GetUser(users[i].DiscordId).Mention} - **({_userService.GetTier(users[i])})**\n";
+                else description += $"`#{count}` - {channel.GetUser(users[i].DiscordId).Mention} - `{users[i].IGN}` - **({_userService.GetTier(users[i])})**\n";
 
             }
 
@@ -610,7 +613,13 @@ namespace DiscordBot.Services
 
             if (message is RestUserMessage restUserMessage)
             {
-                await restUserMessage.ModifyAsync(x => { x.Embed = embed; });
+                try {
+                    await restUserMessage.ModifyAsync(x => { x.Embed = embed; });
+                }
+                catch (Exception ee) {
+
+                    throw;
+                }
 
                 // clear all reactions if queue empty ( match was just generated )
                 if (matchWasGenerated)
@@ -620,7 +629,7 @@ namespace DiscordBot.Services
 
                         await restUserMessage.RemoveAllReactionsAsync();
                         await restUserMessage.AddReactionAsync(new Emoji(_emoteSettings.PlayEmoteUnicode));
-                        if(queue.QueueType != QueueType.NACPlus) {
+                        if(queue.QueueType == QueueType.NAMain) {
                             await restUserMessage.AddReactionAsync(new Emoji(_emoteSettings.PlayDuoEmoteUnicode));
                         }
                     }
