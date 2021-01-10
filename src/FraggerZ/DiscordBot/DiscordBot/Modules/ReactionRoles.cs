@@ -16,6 +16,7 @@ public class ReactionRolesModule : ModuleBase<SocketCommandContext>
 	public ReactionRolesModule(IOptions<RoleSettings> roleSettings, IOptions<EmoteSettings> emoteSettings)
     {
 		_roleSettings = roleSettings.Value;
+		_emoteSettings = emoteSettings.Value;
     }
 
 	[Command("setupwelcome")]

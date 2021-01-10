@@ -10,7 +10,7 @@ namespace Core.Omni.API {
 
 	public class OmniAPI : IOmniAPI {
 
-		private const string API_BASE_URL = "https://google.com/";
+		private const string API_BASE_URL = "https://lcgqxx62z0.execute-api.us-east-2.amazonaws.com/alpha/";
 
 		private HttpClient _client { get; } = new HttpClient();
 
@@ -23,7 +23,7 @@ namespace Core.Omni.API {
 		}
 
 		public async Task UploadUserInfo(UploadUserInfoRequest request) {
-			await RunApiCall<string, UploadUserInfoRequest>($"{API_BASE_URL}user/info", HttpMethod.POST, request);
+			await RunApiCall<string, UploadUserInfoRequest>($"{API_BASE_URL}user/info", HttpMethod.PUT, request);
 		}
 
 		public async Task<GetS3UrlResponse> GetS3UrlForLogs() {

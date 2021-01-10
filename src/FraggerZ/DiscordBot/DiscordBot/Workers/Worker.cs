@@ -52,8 +52,9 @@ namespace DiscordBot.Workers
             _matchReactions = matchReactions;
         }
 
-        public override async Task StartAsync(CancellationToken cancellationToken)
-        {
+        public override async Task StartAsync(CancellationToken cancellationToken) {
+            //_client.ReactionAdded += async (m, c, r) => HandleReactionAddedAsync(m, c, r);
+            //_client.ReactionRemoved += async (m, c, r) => HandleReactionRemovedAsync(m, c, r);
             _client.ReactionAdded += HandleReactionAddedAsync;
             _client.ReactionRemoved += HandleReactionRemovedAsync;
             _client.UserJoined += HandleUserJoinedAsync;
@@ -130,7 +131,6 @@ namespace DiscordBot.Workers
 
         private async Task HandleReactionRemovedAsync(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
         {
-            
             if (reaction.UserId == _botSettings.Id) return;
 
             if (channel is SocketTextChannel socketTextChannel)

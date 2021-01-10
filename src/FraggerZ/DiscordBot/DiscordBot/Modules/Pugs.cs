@@ -77,10 +77,15 @@ public class PugsModule : ModuleBase<SocketCommandContext>
 		List<IEmote> reactions = new List<IEmote>() {
 			new Emoji(_emoteSettings.PlayEmoteUnicode)
 		};
-		if(_rocoPugService.DictQueueForChannel.ContainsKey(Context.Channel.Id) && _rocoPugService.DictQueueForChannel[Context.Channel.Id].QueueType != QueueType.NACPlus) {
+		if(_rocoPugService.DictQueueForChannel.ContainsKey(Context.Channel.Id) && _rocoPugService.DictQueueForChannel[Context.Channel.Id].QueueType == QueueType.NAMain) {
 			reactions.Add(new Emoji(_emoteSettings.PlayDuoEmoteUnicode));
         }
-		await message.AddReactionsAsync(reactions.ToArray());
+        try {
+            await message.AddReactionsAsync(reactions.ToArray());
+        }
+        catch (Exception e) {
+			var msg = e.Message;
+        }
 	}
 
 }

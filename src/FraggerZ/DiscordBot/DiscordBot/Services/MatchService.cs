@@ -268,9 +268,13 @@ namespace DiscordBot.Services {
             Match match = new Match();
             match.GameName = gameName;
             match.MatchRegion = region;
-
-            List<User> listAllUsers = await SetupAutomaticTeams(match, gameName, queue);
-            //List<User> listAllUsers = await SetupCaptainsPick(match, gameName, queue);
+            List<User> listAllUsers;
+            if (queueChannel.Id == _channelSettings.RoCoNAQueueChannelId) {
+                listAllUsers = await SetupAutomaticTeams(match, gameName, queue);
+            }
+            else {
+                listAllUsers = await SetupCaptainsPick(match, gameName, queue);
+            }
 
 
             // choose a random map
@@ -420,14 +424,14 @@ namespace DiscordBot.Services {
             return team.Select(x => x.RoCoMMR).Sum();
         }
 
-        private async Task<List<User>> SetupCaptainsPick(Match match, string gameName, List<IUser> queue) {
+        private async Task<List<User>> SetupCaptainsPick(Match match, string gameName, PlayerQueue queue) {
             match.MatchType = MatchType.PUGCaptains;
 
             // Temporary list constructed from queue to build top 4 random captains
             List<User> captainsPool = new List<User>();
             List<User> listAllUsers = new List<User>();
 
-            foreach (SocketGuildUser userCurr in queue) {
+            foreach (SocketGuildUser userCurr in queue.PlayersInQueue) {
                 User dbUser = await _userService.GetById(userCurr.Id);
                 if (dbUser == null) {
                     throw new Exception("Invalid player in queue");

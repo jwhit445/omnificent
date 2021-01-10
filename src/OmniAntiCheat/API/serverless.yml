@@ -1,0 +1,115 @@
+service: omnificent-api
+
+provider:
+  name: aws
+  profile: omni
+  runtime: nodejs12.x
+  region: us-east-2
+  stage: alpha
+  environment:
+    NODE_ENV: dev
+    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: [
+        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}",
+        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}/index/*",
+      ]
+  apiGateway:
+    shouldStartNameWithService: true
+
+functions:
+  userUpsert:
+    handler: dist/user/handler.upsert
+    events:
+      - http:
+          path: user
+          method: put
+  userUpdateInfo:
+    handler: dist/user/handler.updateInfo
+    events:
+      - http:
+          path: user/info
+          method: put
+  userGetStatuses:
+    handler: dist/user/handler.getStatuses
+    events:
+      - http:
+          path: user/statuses
+          method: post
+
+
+  logeventGetS3Url:
+    handler: dist/logevent/handler.getS3Url
+    events:
+      - http:
+          path: logevent/url
+          method: get
+  logeventGetMany:
+    handler: dist/logevent/handler.getMany
+    events:
+      - http:
+          path: logevent/getmany
+          method: post
+  # matchgetOne:
+  #   handler: dist/user/handler.getOne
+  #   events:
+  #     - http:
+  #         path: user/{id}
+  #         method: get
+  # matchGetByMatchNum:
+  #   handler: dist/user/handler.getByMatchNum
+  #   events:
+  #     - http:
+  #         path: user
+  #         method: get
+  #         request:
+  #           parameters:
+  #             querystrings:
+  #               matchNumber: true
+  # scrimDelete:
+  #   handler: dist/scrim/handler.deleteScrim
+  #   events:
+  #     - http:
+  #         path: scrim/{id}
+  #         method: delete
+  # teamUpdate:
+  #   handler: dist/team/handler.update
+  #   events:
+  #     - http:
+  #         path: team/{id}
+  #         method: put
+  # teamGetStats:
+  #   handler: dist/team/handler.getStats
+  #   events:
+  #     - http:
+  #         path: team/{id}/stats
+  #         method: get
+
+resources:
+  Resources:
+    OmnificentDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
