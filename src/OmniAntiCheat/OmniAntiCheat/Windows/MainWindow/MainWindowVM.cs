@@ -1,4 +1,6 @@
-﻿using Amazon.S3.Transfer;
+﻿using Amazon;
+using Amazon.S3;
+using Amazon.S3.Transfer;
 using Core;
 using Core.Extensions;
 using Core.Omni.API;
@@ -11,6 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -29,6 +32,9 @@ namespace OmniAntiCheat.Windows {
 		private const string CLOSING_STRING = "Closing...";
 		private const string RUNNING_STRING = "Running...";
 		private const string FINDING_PROCESS = "Finding Process...";
+		private const string AWS_USER = "AKIASNWLQTJB7LD6PPDP";
+		private const string AWS_SECRET = "";
+		private const string AWS_BUCKET_NAME = "omnificent-api-alpha-upload-log-events";
 		private const int GAME_POLLING_SECONDS = 3;
 		private const int HEARTBEAT_UNCHANGED_INTERVAL = 30;
 		private const int HEARTBEAT_POLLING_INTERVAL = 2;
@@ -40,6 +46,7 @@ namespace OmniAntiCheat.Windows {
 		private DateTime _lastHeartbeatSent = DateTime.MinValue;
 		private bool _previousIsMossRunning = false;
 		private bool _previousIsGameRunning = false;
+		private RegionEndpoint AmazonEndpoint { get; } = RegionEndpoint.USEast2;
 		private IOmniAPI _omniAPI { get; }
 
 		public string EpicID {
@@ -232,15 +239,6 @@ namespace OmniAntiCheat.Windows {
 					MessageBox.Show($"Unable to open zip file. Error Message: {e.Message}");
 					return;
 				}
-				string amazonUploadUrl = "";
-				try {
-					GetS3UrlResponse response = await _omniAPI.GetS3UrlForLogs();
-					amazonUploadUrl = response.SignedS3Url;
-				}
-				catch(Exception e) {
-					MessageBox.Show($"Error retrieving URL: {e.Message}");
-					return;
-				}
 				List<Func<Task>> listUploadTasks = new List<Func<Task>>();
 				byte[] data = new byte[4096];
 				ZipEntry zipEntry = null;
@@ -255,7 +253,7 @@ namespace OmniAntiCheat.Windows {
 					}
 					listUploadTasks.Add(async () => {
 						try {
-							await UploadBytesToAmazon(amazonUploadUrl, fileName, fileBytes.ToArray());
+							await UploadBytesToAmazon(fileName, fileBytes.ToArray());
 						}
 						catch(Exception e) {
 							listErrorMessages.Add($"File: {fileName} failed to upload. Error Message: {e.Message}");
@@ -278,9 +276,11 @@ namespace OmniAntiCheat.Windows {
 			}
 		}
 
-		private async Task UploadBytesToAmazon(string amazonUrl, string fileName, byte[] bytes) {
-			//Todo: Implement endpoint. May need to change to allow organizing in S3 such as organizing by date, match id, epic username, etc.
-			await Task.CompletedTask;
+		private async Task UploadBytesToAmazon(string fileName, byte[] bytes) {
+			AmazonS3Client client = new AmazonS3Client(AWS_USER, AWS_SECRET, AmazonEndpoint);
+			TransferUtility transferUtility = new TransferUtility(client);
+			using MemoryStream ms = new MemoryStream(bytes);
+			await transferUtility.UploadAsync(ms, AWS_BUCKET_NAME, $"{EpicID}/{DateTime.Today.ToString("yyyy-MM-dd")}/{fileName}");
 		}
 
 		///<summary>Begins indefinitely sending heartbeats to the server about the status of this client.</summary>
