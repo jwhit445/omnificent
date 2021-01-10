@@ -16,6 +16,8 @@ namespace Core.Omni.API {
 
 		public string AuthToken { get; set; }
 
+		public string EpicID { get; set; }
+
 		public async Task<UpsertUserResponse> UpsertUser(UpsertUserRequest request) {
 			return await RunApiCall<UpsertUserResponse, UpsertUserRequest>($"{API_BASE_URL}user", HttpMethod.PUT, request);
 		}
@@ -37,7 +39,7 @@ namespace Core.Omni.API {
 		}
 
 		private async Task<T> RunApiCall<T, R>(string url, HttpMethod method, R body = null) where R: class {
-			_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", AuthToken);
+			_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{EpicID}:{AuthToken}")));
 			HttpResponseMessage responseMessage = null;
 			StringContent content = body != null ? new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json") : null;
 			switch(method) {

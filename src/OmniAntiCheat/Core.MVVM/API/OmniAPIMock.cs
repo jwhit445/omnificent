@@ -8,6 +8,8 @@ namespace Core.Omni.API {
 
 		public string AuthToken { get; set; }
 
+		public string EpicID { get; set; }
+
 		public Task<GetLogsForUserResponse> GetLogsForUsers(GetLogsForUserRequest request) {
 			return Task.FromResult(new GetLogsForUserResponse {
 				RecentUserEvents = new Dictionary<User, List<LogEvent>> {

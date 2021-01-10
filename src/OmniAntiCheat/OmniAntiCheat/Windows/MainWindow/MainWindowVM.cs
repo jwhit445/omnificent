@@ -5,10 +5,7 @@ using Core.Omni.API;
 using Core.Omni.API.Models;
 using Core.Omni.MVVM;
 using Core.Omni.Utilities;
-using Epic.OnlineServices;
-using Epic.OnlineServices.Auth;
 using ICSharpCode.SharpZipLib.Zip;
-using OmniAntiCheat.EpicSDK;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -40,8 +37,6 @@ namespace OmniAntiCheat.Windows {
 		private Process _mossCurrentProcess = null;
 		private Process _gameCurrentProcess = null;
 		private Action _onRogueCompanyClosed = null;
-		private string _scrapedEpicID = "";
-		private EpicClientWrapper _epicClient = null;
 		private DateTime _lastHeartbeatSent = DateTime.MinValue;
 		private bool _previousIsMossRunning = false;
 		private bool _previousIsGameRunning = false;
@@ -52,13 +47,13 @@ namespace OmniAntiCheat.Windows {
 			set { SetBindableProperty(() => EpicID, value); }
 		}
 
-		public bool IsLoggedIn {
-			get { return GetBindableProperty(() => IsLoggedIn); }
-			set { SetBindableProperty(() => IsLoggedIn, value); }
+		public string EpicUsername {
+			get { return GetBindableProperty(() => EpicUsername, ""); }
+			set { SetBindableProperty(() => EpicUsername, value); }
 		}
 
 		public bool IsLoggingIn {
-			get { return GetBindableProperty(() => IsLoggingIn); }
+			get { return GetBindableProperty(() => IsLoggingIn, true); }
 			set { SetBindableProperty(() => IsLoggingIn, value); }
 		}
 
@@ -95,10 +90,13 @@ namespace OmniAntiCheat.Windows {
 		public MainWindowVM(IOmniAPI omniAPI) {
 			_omniAPI = omniAPI;
 			CheckForMossInstallation();
-			CheckScrapedEpicID();
-			_epicClient = new EpicClientWrapper();
+			if(!TryGetScrapedEpicInfo(out string errorMessage)) {
+				MessageBox.Show($"Unable to find Epic user information.\r\nError: {errorMessage}");
+				Environment.Exit(0);
+				return;
+			}
 			TaskUtils.FireAndForget(StartPollForGameEvents());
-			TaskUtils.FireAndForget(Login(LoginCredentialType.PersistentAuth, true));
+			TaskUtils.FireAndForget(Login());
 		}
 
 		///<summary>Starts Moss and the game client.</summary>
@@ -167,65 +165,51 @@ namespace OmniAntiCheat.Windows {
 			GameStatus = FINDING_PROCESS;
 		});
 
-		///<summary>Starts Moss and the game client.</summary>
-		public IAsyncCommand LoginCommand => GetCommandAsync(() => LoginCommand, true, async () => {
-			await Login(LoginCredentialType.AccountPortal);
-		});
-
-		private async Task Login(LoginCredentialType credentialType, bool isSilent = false) {
-			IsLoggingIn = true;
-			try {
-				LoginCallbackInfo retVal = await _epicClient.Login(credentialType);
-				if(retVal?.ResultCode != Result.Success) {
-					if(!isSilent) {
-						MessageBox.Show($"Login unsuccessful. Error: {retVal?.ResultCode.ToString() ?? "NULL"}");
-					}
-					return;
-				}
-				retVal.LocalUserId.ToString(out string epicID);
-				string username = _epicClient.GetUsername(retVal.LocalUserId);
-				//Now we need to successfully hit our register user endpoint before letting them through.
-				try {
-					UpsertUserResponse response = await _omniAPI.UpsertUser(new UpsertUserRequest {
-						User = new User {
-							EpicID = epicID,
-							Username = username,
-						}
-					});
-					_omniAPI.AuthToken = response.AuthorizationToken;
-				}
-				catch(Exception e) {
-					MessageBox.Show($"Unable to login with Omni API. {e.Message}");
-					return;
-				}
-				EpicID = epicID;
-				IsLoggedIn = true;
-				//Start the heartbeats going.
-				TaskUtils.FireAndForget(StartHeartbeatEvents());
-				if(!string.IsNullOrWhiteSpace(_scrapedEpicID) && EpicID != _scrapedEpicID && !isSilent) {
-					MessageBox.Show("Different Epic ID scraped then used to log in.");
+		private bool TryGetScrapedEpicInfo(out string errorMessage) {
+			string appDataPath = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)).FullName;
+			string logsFolder = Path.Combine(appDataPath, @"Local\RogueCompany\Saved\Logs");
+			if(!Directory.Exists(logsFolder)) {
+				errorMessage = "Unable to find log folder.";
+				return false;
+			}
+			List<string> listFiles = Directory
+				.GetFiles(logsFolder)
+				.OrderByDescending(x => File.GetLastWriteTime(x))
+				.ToList();
+			foreach(string filePath in listFiles) {
+				string fileContents = File.ReadAllText(filePath);
+				Match match = Regex.Match(fileContents, @".*-epicusername=(.*) -epicuserid=([^\s]*)");
+				if(match != null && match.Success) {
+					EpicUsername = match.Groups[1].Value;
+					EpicID = match.Groups[2].Value;
+					_omniAPI.EpicID = EpicID;
+					errorMessage = "";
+					return true;
 				}
 			}
-			finally {
-				IsLoggingIn = false;
-			}
+			errorMessage = "Unable to find ID in logs.";
+			return true;
 		}
 
-		private void CheckScrapedEpicID() {
-			string appDataPath = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)).FullName;
-			string folderWithIDPath = Path.Combine(appDataPath, @"Local\EpicGamesLauncher\Saved\Data");
-			if(Directory.Exists(folderWithIDPath)) {
-				List<string> listFiles = Directory.GetFiles(folderWithIDPath).Select(x => Path.GetFileName(x)).ToList();
-				List<string> listIds = listFiles
-					.Select(x => Regex.Match(x, @"^([0-9a-zA-Z]{32})\.dat$"))
-					.Where(x => x != null)
-					.Select(x => x.Groups[1].Value)
-					.Where(x => !string.IsNullOrWhiteSpace(x))
-					.ToList();
-				if(listIds.Count == 1) {
-					_scrapedEpicID = listIds.First();
-				}
+		///<summary>Login with Omni API.</summary>
+		private async Task Login() {
+			try {
+				UpsertUserResponse response = await _omniAPI.UpsertUser(new UpsertUserRequest {
+					User = new User {
+						EpicID = EpicID,
+						Username = EpicUsername,
+					},
+				});
+				_omniAPI.AuthToken = response.AuthorizationToken;
 			}
+			catch(Exception e) {
+				MessageBox.Show($"Unable to login with Omni API. {e.Message}");
+				Environment.Exit(0);
+				return;
+			}
+			IsLoggingIn = false;
+			//Start the heartbeats going.
+			TaskUtils.FireAndForget(StartHeartbeatEvents());
 		}
 
 		///<summary>Finds the latest session and attempts to parse/transfer the data to S3.</summary>

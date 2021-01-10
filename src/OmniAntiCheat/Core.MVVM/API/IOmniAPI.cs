@@ -10,6 +10,9 @@ namespace Core.Omni.API {
 		///<summary>The auth token used for API calls.</summary>
 		string AuthToken { get; set; }
 
+		///<summary>The epic ID used for API calls.</summary>
+		string EpicID { get; set; }
+
 		///<summary>Upserts the user info and returns an authentication token if successful.</summary>
 		Task<UpsertUserResponse> UpsertUser(UpsertUserRequest request);
 

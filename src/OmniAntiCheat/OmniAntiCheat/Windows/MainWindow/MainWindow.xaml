@@ -21,14 +21,8 @@
 		<StackPanel 
 			HorizontalAlignment="Center"
 			VerticalAlignment="Center"
-			Visibility="{Binding IsLoggedIn, Converter={StaticResource IsHiddenConverter}}">
-			<Button
-				IsEnabled="{Binding IsLoggingIn, Converter={StaticResource InverseBoolConverter}}"
-				Command="{Binding LoginCommand}">
-				Epic Login
-			</Button>
+			Visibility="{Binding IsLoggingIn, Converter={StaticResource IsVisibleConverter}}">
 			<lottieSharp:LottieAnimationView
-				Visibility="{Binding IsLoggingIn, Converter={StaticResource IsVisibleConverter}}"
 				DefaultCacheStrategy="None"
 				FileName="7773-loading.json"
 				AutoPlay="True" 
@@ -40,9 +34,11 @@
 		<StackPanel 
 			HorizontalAlignment="Center"
 			VerticalAlignment="Center"
-			Visibility="{Binding IsLoggedIn, Converter={StaticResource IsVisibleConverter}}">
+			Visibility="{Binding IsLoggingIn, Converter={StaticResource IsHiddenConverter}}">
 			<TextBlock 
 				Text="{Binding EpicID, StringFormat=Epic ID: {0}}"/>
+			<TextBlock 
+				Text="{Binding EpicUsername, StringFormat=Epic Username: {0}}"/>
 			<Grid Margin="0, 30, 0, 30">
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition Width="*" />
