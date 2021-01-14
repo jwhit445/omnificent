@@ -9,6 +9,7 @@ provider:
   environment:
     NODE_ENV: dev
     DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    S3LOG_BUCKET_NAME: ${self:service}-${opt:stage, self:provider.stage}-upload-log-events
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -22,6 +23,12 @@ provider:
         "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}",
         "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}/index/*",
       ]
+    - Effect: 'Allow'
+      Action:
+        - 's3:PutObject'
+        - 's3:GetObject'
+      Resource:
+        - !GetAtt UploadLogEventBucket.Arn
   apiGateway:
     shouldStartNameWithService: true
 
@@ -113,3 +120,34 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.DYNAMODB_TABLE}
+    
+    UploadLogEventBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: "${self:service}-${opt:stage, self:provider.stage}-upload-log-events"
+        AccessControl: Private
+        CorsConfiguration:
+          CorsRules:
+          - AllowedMethods:
+            - GET
+            - PUT
+            - POST
+            - HEAD
+            AllowedOrigins:
+            - "*"
+            AllowedHeaders:
+            - "*"
+    
+    UploadLogEventBucketPolicy: 
+      Type: AWS::S3::BucketPolicy
+      Properties: 
+        Bucket: 
+          Ref: UploadLogEventBucket
+        PolicyDocument: 
+          Statement: 
+            - Action: 
+                - "s3:GetObject"
+                - "s3:PutObject"
+              Effect: "Allow"
+              Resource: "arn:aws:s3:::${self:provider.environment.S3LOG_BUCKET_NAME}/*"
+              Principal: "*"

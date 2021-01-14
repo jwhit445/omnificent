@@ -18,7 +18,7 @@ test('if team1 wins a match they gain mmr', () => {
   const user4: User = new User();
   user4.RoCoMMR = initialMMR;
   user4.RoCoSigma = initalSigma;
-  
+
   const user5: User = new User();
   user5.RoCoMMR = initialMMR;
   user5.RoCoSigma = initalSigma;
@@ -32,11 +32,11 @@ test('if team1 wins a match they gain mmr', () => {
   user8.RoCoMMR = initialMMR;
   user8.RoCoSigma = initalSigma;
 
-  var team1Users: User[] = [user1, user2, user3, user4];
-  var team2Users: User[] = [user5, user6, user7, user8];
+  const team1Users: User[] = [user1, user2, user3, user4];
+  const team2Users: User[] = [user5, user6, user7, user8];
   calculatePoints(team1Users, team2Users);
-  console.log("team1 new MMR: " + team1Users[0].RoCoMMR + ", Sigma: " + team1Users[0].RoCoSigma);
-  console.log("team2 new MMR: " + team2Users[0].RoCoMMR + ", Sigma: " + team2Users[0].RoCoSigma);
+  // console.log("team1 new MMR: " + team1Users[0].RoCoMMR + ", Sigma: " + team1Users[0].RoCoSigma);
+  // console.log("team2 new MMR: " + team2Users[0].RoCoMMR + ", Sigma: " + team2Users[0].RoCoSigma);
   expect(team1Users[0].RoCoMMR > initialMMR).toBeTruthy();
   expect(team2Users[0].RoCoMMR < initialMMR).toBeTruthy();
 });
@@ -57,7 +57,7 @@ test('if team2 wins a match they gain mmr', () => {
   const user4: User = new User();
   user4.RoCoMMR = initialMMR;
   user4.RoCoSigma = initalSigma;
-  
+
   const user5: User = new User();
   user5.RoCoMMR = initialMMR;
   user5.RoCoSigma = initalSigma;
@@ -71,11 +71,11 @@ test('if team2 wins a match they gain mmr', () => {
   user8.RoCoMMR = initialMMR;
   user8.RoCoSigma = initalSigma;
 
-  var team1Users: User[] = [user1, user2, user3, user4];
-  var team2Users: User[] = [user5, user6, user7, user8];
+  const team1Users: User[] = [user1, user2, user3, user4];
+  const team2Users: User[] = [user5, user6, user7, user8];
   calculatePoints(team2Users, team1Users);
-  console.log("team1 new MMR: " + team1Users[0].RoCoMMR + ", Sigma: " + team1Users[0].RoCoSigma);
-  console.log("team2 new MMR: " + team2Users[0].RoCoMMR + ", Sigma: " + team2Users[0].RoCoSigma);
+  // console.log("team1 new MMR: " + team1Users[0].RoCoMMR + ", Sigma: " + team1Users[0].RoCoSigma);
+  // console.log("team2 new MMR: " + team2Users[0].RoCoMMR + ", Sigma: " + team2Users[0].RoCoSigma);
   expect(team1Users[0].RoCoMMR < initialMMR).toBeTruthy();
   expect(team2Users[0].RoCoMMR > initialMMR).toBeTruthy();
 });

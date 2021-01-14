@@ -93,12 +93,13 @@ namespace DiscordBot.Services
         {
             var response = await httpClient.GetAsync(_apiSettings.BaseURL + $"/user/{user.Id}/stats");
             StatSummary stats = null;
-            if (response != null)
+            if (response == null || response.StatusCode != System.Net.HttpStatusCode.OK)
             {
-                var jsonString = await response.Content.ReadAsStringAsync();
-                try { stats = JsonConvert.DeserializeObject<StatSummary>(jsonString); }
-                catch (Exception e) { Console.WriteLine(e.Message); }
+                throw new Exception("Couldn't get StatSummary");
             }
+            var jsonString = await response.Content.ReadAsStringAsync();
+            try { stats = JsonConvert.DeserializeObject<StatSummary>(jsonString); }
+            catch (Exception e) { Console.WriteLine(e.Message); }
             return stats;
         }
 

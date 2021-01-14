@@ -11,7 +11,6 @@ export const register: Handler = (event: any, context: Context, callback: any) =
     const data = JSON.parse(event.body)
     try {
         if (!validateUser(data)) {
-            console.error('Validation Failed')
             callback(new Error("Invalid request data"));
             return;
         }
@@ -25,13 +24,11 @@ export const register: Handler = (event: any, context: Context, callback: any) =
         TableName: process.env.DYNAMODB_TABLE,
         Item: user_to_ddb(data),
     }
-    console.log('ID from params: ' + params.Item.Id);
 
     // write the user to the database
     dynamoDb.put(params, (error, result) => {
         // handle potential errors
         if (error) {
-            console.error(error);
             callback(new Error('Couldn\'t create the user for id:' + params.Item.Id));
             return;
         }
@@ -61,7 +58,7 @@ function validateUser(user: User): boolean {
 export const getOne = async (event: any, context: Context): Promise<any> => {
     try {
         // fetch user from the database by id
-        var result = await get_user_from_ddb(dynamoDb, event.pathParameters.id, undefined);
+        const result = await get_user_from_ddb(dynamoDb, event.pathParameters.id, undefined);
         const response = {
             statusCode: 200,
             body: JSON.stringify(result),
@@ -80,7 +77,6 @@ export const update = async (event: any, context: Context): Promise<any> => {
     const data = JSON.parse(event.body)
     try {
         if (!validateUser(data)) {
-            console.error('Validation Failed')
             throw new Error("Invalid request data");
         }
     } catch (error) {
@@ -103,18 +99,17 @@ export const update = async (event: any, context: Context): Promise<any> => {
 export const getStats = async (event: any, context: Context): Promise<any> => {
     try {
         // fetch user from the database by id
-        var result = await get_user_from_ddb(dynamoDb, event.pathParameters.id, undefined);
+        const result = await get_user_from_ddb(dynamoDb, event.pathParameters.id, undefined);
         const userStats: UserStats = new UserStats();
         userStats.Id = result.Id;
         userStats.Wins = 0;
         userStats.Losses = 0;
         userStats.RoCoMMR = result.RoCoMMR;
-        var allMatches = await getAllMatchesForUser(userStats.Id, MatchStatus.Reported);
+        const allMatches = await getAllMatchesForUser(userStats.Id, MatchStatus.Reported);
         if(allMatches === undefined || allMatches === null) {
             throw new Error('Error retrieving matches from db');
         }
-        for (let i = 0; i < allMatches.Items.length; i++) {
-            const matchCur = allMatches.Items[i];
+        for (const matchCur of allMatches.Items) {
             if(matchCur.MatchNumber < 564) {
                 continue;
             }
@@ -138,12 +133,21 @@ export const getStats = async (event: any, context: Context): Promise<any> => {
                 }
             }
         }
-        var users = await getAllUsersByTopMmr();
-        var rankStanding: number = 0;
-        while(users[rankStanding].RoCoMMR > userStats.RoCoMMR) {
-            rankStanding+=1;
+        if(result.PlacementMatchIds.length < 10) {
+            userStats.RankPosition = -1;
         }
-        userStats.RankPosition = rankStanding;
+        else {
+            const users = await getAllUsersByTopMmr();
+            let idx: number = 0;
+            let rankStanding: number = 0;
+            while(users[idx].RoCoMMR > userStats.RoCoMMR) {
+                if(users[idx].PlacementMatchIds.length >= 10) {
+                    rankStanding+=1;
+                }
+                idx+=1;
+            }
+            userStats.RankPosition = rankStanding;
+        }
         const response = {
             statusCode: 200,
             body: JSON.stringify(userStats),
@@ -161,25 +165,24 @@ export const getStats = async (event: any, context: Context): Promise<any> => {
 export const getStatsWithMatches = async (event: any, context: Context): Promise<any> => {
     try {
         // fetch user from the database by id
-        var result = await get_user_from_ddb(dynamoDb, event.pathParameters.id, undefined);
+        const result = await get_user_from_ddb(dynamoDb, event.pathParameters.id, undefined);
         const userStats: UserStats = new UserStats();
         userStats.Id = result.Id;
         userStats.Wins = 0;
         userStats.Losses = 0;
         userStats.RoCoMMR = result.RoCoMMR;
         const matchIds: any[] = [];
-        var allMatches = await getAllMatchesForUser(userStats.Id, MatchStatus.Reported);
-        var cancelledMatches = await getAllMatchesForUser(userStats.Id, MatchStatus.Cancelled);
+        const allMatches = await getAllMatchesForUser(userStats.Id, MatchStatus.Reported);
+        const cancelledMatches = await getAllMatchesForUser(userStats.Id, MatchStatus.Cancelled);
         if(allMatches === undefined || allMatches === null) {
             throw new Error('Error retrieving matches from db');
         }
-        for (let i = 0; i < allMatches.Items.length; i++) {
-            const matchCur = allMatches.Items[i];
+        for (const matchCur of allMatches.Items) {
             if(matchCur.MatchNumber < 112) { // The first MMR game. Some games before then have been incorrectly marked as reported.
                 continue;
             }
             if(matchCur.Team1Ids.includes(userStats.Id)) {
-                matchIds.push({ id: matchCur.Id, matchnumber: matchCur.MatchNumber, outcome: (matchCur.WinningTeam == 1 ? "Win" : "Loss") });
+                matchIds.push({ id: matchCur.Id, matchnumber: matchCur.MatchNumber, outcome: (matchCur.WinningTeam === 1 ? "Win" : "Loss") });
                 if(matchCur.WinningTeam === 1) {
                     userStats.Wins+=1;
                 }
@@ -188,7 +191,7 @@ export const getStatsWithMatches = async (event: any, context: Context): Promise
                 }
             }
             if(matchCur.Team2Ids.includes(userStats.Id)) {
-                matchIds.push({ id: matchCur.Id, matchnumber: matchCur.MatchNumber, outcome: (matchCur.WinningTeam == 2 ? "Win" : "Loss") });
+                matchIds.push({ id: matchCur.Id, matchnumber: matchCur.MatchNumber, outcome: (matchCur.WinningTeam === 2 ? "Win" : "Loss") });
                 if(matchCur.WinningTeam === 1) {
                     userStats.Losses+=1;
                 }
@@ -197,8 +200,7 @@ export const getStatsWithMatches = async (event: any, context: Context): Promise
                 }
             }
         }
-        for (let i = 0; i < cancelledMatches.Items.length; i++) {
-            const matchCur = cancelledMatches.Items[i];
+        for (const matchCur of cancelledMatches.Items) {
             if(matchCur.MatchNumber < 112) { // The first MMR game. Some games before then have been incorrectly marked as reported.
                 continue;
             }
@@ -209,9 +211,9 @@ export const getStatsWithMatches = async (event: any, context: Context): Promise
                 matchIds.push({ id: matchCur.Id, matchnumber: matchCur.MatchNumber, outcome: "Cancelled" });
             }
         }
-        matchIds.sort((a, b) => (parseInt(a.MatchNumber) > parseInt(b.MatchNumber)) ? 1 : -1);
-        var users = await getAllUsersByTopMmr();
-        var rankStanding: number = 0;
+        matchIds.sort((a, b) => (Number.parseInt(a.MatchNumber, 10) > Number.parseInt(b.MatchNumber, 10)) ? 1 : -1);
+        const users = await getAllUsersByTopMmr();
+        let rankStanding: number = 0;
         while(users[rankStanding].RoCoMMR > userStats.RoCoMMR) {
             rankStanding+=1;
         }
@@ -232,7 +234,7 @@ export const getStatsWithMatches = async (event: any, context: Context): Promise
 
 export const getAll = async (event: any, context: Context): Promise<any> => {
     try {
-        var filteredResults = await get_all_from_ddb(dynamoDb, undefined);
+        const filteredResults = await get_all_from_ddb(dynamoDb, undefined);
         const response = {
             statusCode: 200,
             body: JSON.stringify(filteredResults),
@@ -244,21 +246,10 @@ export const getAll = async (event: any, context: Context): Promise<any> => {
 };
 
 export const getAllUsersByTopMmr = async (): Promise<any> => {
-    const params = {
-        TableName: process.env.DYNAMODB_TABLE,
-    };
     try {
-        var result = await dynamoDb.scan(params).promise();
-        if(result.Count && result.Items) {
-            var filteredResults = result.Items.filter(function(item: any) {
-                return item.EntityType === 'user';
-            });
-            filteredResults.sort((a: any, b: any) => (a.RoCoMMR > b.RoCoMMR) ? -1 : 1);
-            return filteredResults;
-        }
-        else {
-            throw new Error('Couldn\'t find any users in the database');
-        }
+        const filteredResults = await get_all_from_ddb(dynamoDb, undefined);
+        filteredResults.sort((a: any, b: any) => (a.RoCoMMR > b.RoCoMMR) ? -1 : 1);
+        return filteredResults;
     } catch (error) {
         throw new Error('Couldn\'t find any users in the database: ' + error);
     }
@@ -266,10 +257,10 @@ export const getAllUsersByTopMmr = async (): Promise<any> => {
 
 export const getLeaderboard = async (event: any, context: Context): Promise<any> => {
     try {
-        var result = await getAllUsersByTopMmr();
+        const result = await getAllUsersByTopMmr();
         const response = {
             statusCode: 200,
-            body: JSON.stringify(result),
+            body: JSON.stringify(result.slice(0, 20)),
         };
         return response;
     } catch (error) {

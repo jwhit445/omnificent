@@ -1,5 +1,6 @@
 import { Context } from 'aws-lambda';
-import { DynamoDB } from 'aws-sdk'
+import { DynamoDB } from 'aws-sdk';
+import { v4 } from "uuid";
 
 const dynamoDb = new DynamoDB.DocumentClient()
 
@@ -11,19 +12,27 @@ export const upsert = async (event: any, context: Context): Promise<any> => {
             EpicID: data.User.EpicID,
         };
         try {
-            await dynamoDb.put({
+            const sessionToken: string = v4();
+            await dynamoDb.update({
                 TableName: process.env.DYNAMODB_TABLE,
-                Item: {
+                Key: {
                     PK: `#USER#${user.EpicID}`,
-                    SK: `PROFILE`,
-                    EpicID: user.EpicID,
-                    Username: user.Username
+                    SK: `PROFILE`
+                },
+                UpdateExpression: 'set '
+                    + 'EpicID = :id, '
+                    + 'Username = :username, '
+                    + 'AuthToken = :authToken',
+                ExpressionAttributeValues: {
+                    ':id': user.EpicID,
+                    ':username': user.Username,
+                    ':authToken': sessionToken
                 }
             }).promise();
             // create a response
             const response = {
                 statusCode: 200,
-                body: `Successfully created or modified user: ${user.Username}`
+                body: JSON.stringify({ AuthorizationToken: sessionToken }),
             }
             return response;
         } catch (error) {
@@ -38,12 +47,70 @@ export const upsert = async (event: any, context: Context): Promise<any> => {
     }
 };
 
-export const updateInfo = async (event: any, context: Context): Promise<any> => {
+interface HeaderInfo {
+    IsValid: boolean;
+    Id: string;
+    Token: string;
+    Error: any;
+}
+
+const validateAuthHeader = async (authHeader: string): Promise<HeaderInfo> => {
+    if(!authHeader || authHeader.trim().length === 0 || !authHeader.startsWith('Bearer ')) {
+        return { IsValid: false, Id: '', Token: authHeader, Error: null };
+    }
     try {
-        // todo stuff
+        const authSections: string[] = Buffer.from(authHeader.split(" ")[1], 'base64').toString().split(":");
+        const id: string = authSections[0];
+        const token: string = authSections[1];
+        const res = await dynamoDb.query({
+            TableName: process.env.DYNAMODB_TABLE,
+            KeyConditionExpression: 'PK = :pk AND SK = :sk ',
+            ExpressionAttributeValues: {
+              ':pk': `#USER#${id}`,
+              ':sk': 'PROFILE'
+            },
+            Limit: 1
+        }).promise();
+        if(!res || res.Count === 0 || res.Items[0].AuthToken !== token) {
+            return { IsValid: false, Id: id, Token: token, Error: JSON.stringify({Count: res.Count}) };
+        }
+        return { IsValid: true, Id: id, Token: token, Error: null };
+    }
+    catch(err) {
+        return { IsValid: false, Id: '', Token: authHeader + ' : ' + authHeader.substr(7), Error: err.message };
+    }
+
+}
+
+export const updateInfo = async (event: any, context: Context): Promise<any> => {
+    const headerInfo: HeaderInfo = await validateAuthHeader(event.headers.Authorization);
+    if(!headerInfo.IsValid) {
+        return {
+            statusCode: 401,
+            body: JSON.stringify(headerInfo),
+        }
+    }
+    try {
+        const data = JSON.parse(event.body)
+        const userInfo = {
+            IsMossRunning: data.IsMossRunning,
+            IsRogueCompanyRunning: data.IsRogueCompanyRunning
+        };
+        await dynamoDb.update({
+            TableName: process.env.DYNAMODB_TABLE,
+            Key: {
+                PK: `#USER#${headerInfo.Id}`,
+                SK: `PROFILE`
+            },
+            UpdateExpression: 'set IsMossRunning = :mossRunning, IsRogueCompanyRunning = :rocoRunning',
+            ExpressionAttributeValues: {
+                ':mossRunning': userInfo.IsMossRunning,
+                ':rocoRunning': userInfo.IsRogueCompanyRunning
+            }
+        }).promise();
         const response = {
             statusCode: 200,
-            body: 'SUCCESS updateInfo!',
+            body: 'Updated the user\'s info',
         };
         return response;
     } catch (error) {

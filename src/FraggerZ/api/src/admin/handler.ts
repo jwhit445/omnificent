@@ -23,15 +23,14 @@ export const resetAllMmr = async (event: any, context: Context): Promise<any> =>
 };
 
 const setMmrTo = async (newMmr: number, newSigma: number, tableName: string | undefined): Promise<any> => {
-    var filteredResults;
+    let filteredResults;
     try {
          filteredResults = await get_all_from_ddb(dynamoDb, tableName);
     } catch (error) {
         throw new Error('Couldn\'t fetch all users: '+error);
     }
     try {
-        for (let i = 0; i < filteredResults.length; i++) {
-            const userCur = filteredResults[i];
+        for (const userCur of filteredResults) {
             userCur.RoCoMMR = newMmr;
             userCur.RoCoSigma = newSigma;
             userCur.PlacementMatchIds = [];
@@ -60,18 +59,17 @@ export const redoAllMmr = async (event: any, context: Context): Promise<any> => 
         }
     }
     const startingMatchId = 112;
-    var lastMatchReported: number = 112;
+    let lastMatchReported: number = 112;
     try {
-        var matches = await get_all_matches_from_ddb(dynamoDb, tableName);
-        for (let i = 0; i < matches.length; i++) {
-            const matchCur = matches[i];
+        const matches = await get_all_matches_from_ddb(dynamoDb, tableName);
+        for (const matchCur of matches) {
             if(matchCur.MatchNumber < startingMatchId) {
                 continue;
             }
             if(lastMatchReported - startingMatchId >= 100) {
                 break;
             }
-            if(matchCur.MatchStatus == MatchStatus.Reported) {
+            if(matchCur.MatchStatus === MatchStatus.Reported) {
                 await reportMatch(matchCur,matchCur.Id,tableName);
                 lastMatchReported = matchCur.MatchNumber;
             }

@@ -92,9 +92,9 @@ export function match_to_ddb_update_params(id: string, data: any, tableName: str
     }
 }
 
-export const get_all_matches_from_ddb = async (dynamoDb: DynamoDB.DocumentClient, tableName: string | undefined): Promise<any> => {
+export async function get_all_matches_from_ddb(dynamoDb: DynamoDB.DocumentClient, tableName: string | undefined): Promise<any> {
     try {
-        var result = await dynamoDb.query({
+        const result = await dynamoDb.query({
             TableName: tableName || process.env.DYNAMODB_TABLE,
             IndexName: 'EntityTypeMatchNumberIndex',
             KeyConditionExpression: 'EntityType = :hashKey',

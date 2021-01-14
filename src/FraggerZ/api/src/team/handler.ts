@@ -29,7 +29,7 @@ export const register = async (event: any, context: Context): Promise<any> => {
         }
         return response;
     } catch (error) {
-        throw new Error('Couldn\'t create the team for id:' + params.Item.Id)   
+        throw new Error('Couldn\'t create the team for id:' + params.Item.Id)
     }
 };
 
@@ -41,7 +41,7 @@ export const getOne = async (event: any, context: Context): Promise<any> => {
           EntityType: 'team'
         },
     };
-    
+
     // fetch user from the database by id
     try {
         const result = await dynamoDb.get(params).promise();
@@ -63,7 +63,6 @@ export const update: Handler = (event: any, context: Context, callback: any) => 
     const data = JSON.parse(event.body)
     try {
         if (!validateTeam(data)) {
-            console.error('Validation Failed')
             callback(new Error("Invalid request data"));
             return;
         }
@@ -78,7 +77,6 @@ export const update: Handler = (event: any, context: Context, callback: any) => 
     dynamoDb.update(params, (error, result) => {
         // handle potential errors
         if (error) {
-            console.error(error);
             callback(new Error('Couldn\'t update the team for id:' + data.Id + "Error: " + error));
             return;
         }

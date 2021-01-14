@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Game = DiscordBot.Models.Game;
@@ -514,11 +515,12 @@ namespace DiscordBot.Services {
         public async Task<Match> GetByNumber(int matchNumber) {
             var response = await httpClient.GetAsync(_apiSettings.BaseURL + $"/match/?matchNumber={matchNumber}");
             Match match = null;
-            if (response != null) {
-                var jsonString = await response.Content.ReadAsStringAsync();
-                try { match = JsonConvert.DeserializeObject<Match>(jsonString); }
-                catch (Exception e) { Console.WriteLine(e.Message); }
+            if (response == null || response.StatusCode != HttpStatusCode.OK) {
+                throw new Exception("Error calling GetByNumber API endpoint");
             }
+            var jsonString = await response.Content.ReadAsStringAsync();
+            try { match = JsonConvert.DeserializeObject<Match>(jsonString); }
+            catch (Exception e) { Console.WriteLine(e.Message); }
             return match;
         }
     }

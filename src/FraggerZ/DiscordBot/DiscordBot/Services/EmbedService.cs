@@ -208,10 +208,10 @@ namespace DiscordBot.Services
                 }
                 if(_userService.GetTier(users[i]) == "U")
                 {
-                    //The user likely left the Discord server. We can't show them.
                     continue;
                 }
                 if(channel.GetUser(users[i].DiscordId) == null) {
+                    //The user likely left the Discord server. We can't show them.
                     continue;
                 }
                 count++;
@@ -569,7 +569,7 @@ namespace DiscordBot.Services
             StatSummary stats = await _userService.GetStatSummary(user);
             builder.AddField(new EmbedFieldBuilder() { Name = "Wins", Value = stats.Wins.ToString() });
             builder.AddField(new EmbedFieldBuilder() { Name = "Losses", Value = stats.Losses.ToString() });
-            builder.AddField(new EmbedFieldBuilder() { Name = "Leaderboard Position", Value = (stats.RankPosition + 1).ToString() });
+            builder.AddField(new EmbedFieldBuilder() { Name = "Leaderboard Position", Value = (stats.RankPosition < 0 ? "N/A" : (stats.RankPosition + 1).ToString()) });
             builder.WithDescription(description);
             builder.WithFooter("*Coming soon: map stats!*");
             return builder.Build();

@@ -19,7 +19,7 @@ export class User {
     DateTimeLastStatReset: Date;
 }
 
-export const get_user_from_ddb = async (dynamoDb: DynamoDB.DocumentClient, id: string, tableName: string | undefined): Promise<any> => {
+export async function get_user_from_ddb(dynamoDb: DynamoDB.DocumentClient, id: string, tableName: string | undefined): Promise<any> {
     const params = {
         TableName: tableName || process.env.DYNAMODB_TABLE,
         Key: {
@@ -32,7 +32,7 @@ export const get_user_from_ddb = async (dynamoDb: DynamoDB.DocumentClient, id: s
     return result.Item;
 }
 
-export const update_user_from_ddb = async (dynamoDb: DynamoDB.DocumentClient, id: string, user: User, tableName: string | undefined): Promise<any> => {
+export async function update_user_from_ddb(dynamoDb: DynamoDB.DocumentClient, id: string, user: User, tableName: string | undefined): Promise<any> {
     const params = user_to_ddb_update_params(id, user, tableName);
     try {
         // write the match changes to the database
@@ -42,7 +42,7 @@ export const update_user_from_ddb = async (dynamoDb: DynamoDB.DocumentClient, id
     }
 };
 
-export const get_all_from_ddb = async (dynamoDb: DynamoDB.DocumentClient, tableName: string | undefined): Promise<any> => {
+export async function get_all_from_ddb(dynamoDb: DynamoDB.DocumentClient, tableName: string | undefined): Promise<any> {
     const params = {
         TableName: tableName || process.env.DYNAMODB_TABLE,
         FilterExpression: 'EntityType = :et',
@@ -51,7 +51,7 @@ export const get_all_from_ddb = async (dynamoDb: DynamoDB.DocumentClient, tableN
         }
     };
     try {
-        var result = await dynamoDb.scan(params).promise();
+        const result = await dynamoDb.scan(params).promise();
         if(result.Count && result.Items) {
             return result.Items;
         }
@@ -121,9 +121,9 @@ export function user_to_ddb_update_params(id: string, data: any, tableName: stri
     }
 }
 
-export const get_user_count_above_rocommr = async (dynamoDb: DynamoDB.DocumentClient, mmr: number): Promise<any> => {
+export async function get_user_count_above_rocommr(dynamoDb: DynamoDB.DocumentClient, mmr: number): Promise<any> {
     try {
-        var result = await dynamoDb.query({
+        const result = await dynamoDb.query({
             TableName: process.env.DYNAMODB_TABLE,
             IndexName: 'EntityTypeMatchNumberIndex',
             KeyConditionExpression: 'EntityType = :hashKey',

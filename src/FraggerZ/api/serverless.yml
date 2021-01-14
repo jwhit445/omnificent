@@ -2,6 +2,7 @@ service: fraggerz-api
 
 provider:
   name: aws
+  profile: fraggerz
   runtime: nodejs12.x
   region: us-east-2
   stage: alpha

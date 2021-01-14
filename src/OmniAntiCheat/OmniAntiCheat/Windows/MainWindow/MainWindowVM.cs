@@ -230,50 +230,59 @@ namespace OmniAntiCheat.Windows {
 				MessageBox.Show($"Unable to transfer logs. File at: {lastPathValue} does not exist.");
 				return;
 			}
-			ZipInputStream zipInputStream = null;
-			try {
-				try {
-					zipInputStream = new ZipInputStream(File.OpenRead(lastPathValue));
-				}
-				catch(Exception e) {
-					MessageBox.Show($"Unable to open zip file. Error Message: {e.Message}");
-					return;
-				}
-				List<Func<Task>> listUploadTasks = new List<Func<Task>>();
-				byte[] data = new byte[4096];
-				ZipEntry zipEntry = null;
-				List<string> listErrorMessages = new List<string>();
-				while((zipEntry = zipInputStream.GetNextEntry()) != null) {
-					string fileName = zipEntry.Name;
-					int size = zipInputStream.Read(data, 0, data.Length);
-					List<byte> fileBytes = new List<byte>();
-					while(size > 0) {
-						fileBytes.AddRange(data);
-						size = zipInputStream.Read(data, 0, data.Length);
-					}
-					listUploadTasks.Add(async () => {
-						try {
-							await UploadBytesToAmazon(fileName, fileBytes.ToArray());
-						}
-						catch(Exception e) {
-							listErrorMessages.Add($"File: {fileName} failed to upload. Error Message: {e.Message}");
-						}
-					});
-				}
-				await TaskUtils.WhenAll(listUploadTasks);
-				if(listErrorMessages.IsNullOrEmpty()) {
-					//Perfect upload. We can clean up the zip for them.
-					ExUtils.SwallowAnyException(() => {
-						File.Delete(lastPathValue);
-					});
-				}
-				else {
-					MessageBox.Show(string.Join("\r\n", listErrorMessages));
-				}
-			}
-			finally {
-				zipInputStream.Dispose();
-			}
+			await ExUtils.SwallowAnyExceptionAsync(async () => {
+				await UploadZipToAmazon(lastPathValue);
+			});
+            //ZipInputStream zipInputStream = null;
+            //try {
+            //    try {
+            //        zipInputStream = new ZipInputStream(File.OpenRead(lastPathValue));
+            //    }
+            //    catch (Exception e) {
+            //        MessageBox.Show($"Unable to open zip file. Error Message: {e.Message}");
+            //        return;
+            //    }
+            //    List<Func<Task>> listUploadTasks = new List<Func<Task>>();
+            //    byte[] data = new byte[4096];
+            //    ZipEntry zipEntry = null;
+            //    List<string> listErrorMessages = new List<string>();
+            //    while ((zipEntry = zipInputStream.GetNextEntry()) != null) {
+            //        string fileName = zipEntry.Name;
+            //        int size = zipInputStream.Read(data, 0, data.Length);
+            //        List<byte> fileBytes = new List<byte>();
+            //        while (size > 0) {
+            //            fileBytes.AddRange(data);
+            //            size = zipInputStream.Read(data, 0, data.Length);
+            //        }
+            //        listUploadTasks.Add(async () => {
+            //            try {
+            //                await UploadBytesToAmazon(fileName, fileBytes.ToArray());
+            //            }
+            //            catch (Exception e) {
+            //                listErrorMessages.Add($"File: {fileName} failed to upload. Error Message: {e.Message}");
+            //            }
+            //        });
+            //    }
+            //    await TaskUtils.WhenAll(listUploadTasks);
+            //    if (listErrorMessages.IsNullOrEmpty()) {
+            //        //Perfect upload. We can clean up the zip for them.
+            //        ExUtils.SwallowAnyException(() => {
+            //            File.Delete(lastPathValue);
+            //        });
+            //    }
+            //    else {
+            //        MessageBox.Show(string.Join("\r\n", listErrorMessages));
+            //    }
+            //}
+            //finally {
+            //    zipInputStream.Dispose();
+            //}
+        }
+
+		private async Task UploadZipToAmazon(string fullZipPath) {
+			AmazonS3Client client = new AmazonS3Client(AWS_USER, AWS_SECRET, AmazonEndpoint);
+			TransferUtility transferUtility = new TransferUtility(client);
+			await transferUtility.UploadAsync(fullZipPath, AWS_BUCKET_NAME, $"{EpicID}/{DateTime.Today:yyyy-MM-dd}/{Path.GetFileName(fullZipPath)}");
 		}
 
 		private async Task UploadBytesToAmazon(string fileName, byte[] bytes) {

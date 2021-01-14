@@ -11,7 +11,6 @@ module.exports.register = async (event: any, context: Context): Promise<any> => 
     const data = JSON.parse(event.body)
     try {
         if (!validateMatch(data)) {
-            console.error('Validation Failed')
             throw new Error("Invalid request data");
         }
     } catch (error) {
@@ -43,7 +42,7 @@ async function getNextMatchNumber(): Promise<number> {
             return result.Items[0].MatchNumber + 1;
         }
         else {
-            //No record in the DB. Start with 1.
+            // No record in the DB. Start with 1.
             return 1;
         }
 }
@@ -92,7 +91,6 @@ export const update = (event: any, context: Context, callback: any): Handler => 
     const data = JSON.parse(event.body)
     try {
         if (!validateMatch(data)) {
-            console.error('Validation Failed')
             callback(new Error("Invalid request data"));
             return;
         }
@@ -107,7 +105,6 @@ export const update = (event: any, context: Context, callback: any): Handler => 
     dynamoDb.update(params, (error, result) => {
         // handle potential errors
         if (error) {
-            console.error(error);
             callback(new Error('Couldn\'t update the match for id:' + data.Id + "Error: " + error));
             return;
         }
@@ -128,14 +125,13 @@ export const report = async (event: any, context: Context): Promise<any> => {
             throw new Error("Invalid request data");
         }
     } catch(error) {
-        console.error('Validation Failed')
         throw new Error("Invalid request data");
     }
-    var match = data as Match;
-    if(match.MatchStatus == MatchStatus.Reported) {
+    const match = data as Match;
+    if(match.MatchStatus === MatchStatus.Reported) {
         throw new Error("This match has already been reported");
     }
-    if(match.MatchStatus == MatchStatus.Cancelled) {
+    if(match.MatchStatus === MatchStatus.Cancelled) {
         throw new Error("This match was cancelled!");
     }
     try {
@@ -157,29 +153,27 @@ export const report = async (event: any, context: Context): Promise<any> => {
 export const reportMatch = async (match: Match, id: string, tableName: string): Promise<any> => {
     match.MatchStatus = MatchStatus.Reported;
     // Get all users and their current mmr
-    var team1Users: User[] = [];
-    var team2Users: User[] = [];
+    const team1Users: User[] = [];
+    const team2Users: User[] = [];
     // For each user, call an "assign points" method that takes in:
-    // 1. The user id and 
+    // 1. The user id and
     // 2. If they won or lost
     // 3. All of the opposing team's
-    for (let i = 0; i < match.Team1Ids.length; i++) {
-        const userId = match.Team1Ids[i];
+    for (const userId of match.Team1Ids) {
         // Get the user from their id
         const userCur: User = await get_user_from_ddb(dynamoDb, userId, tableName);
         team1Users.push(userCur);
     }
-    for (let i = 0; i < match.Team2Ids.length; i++) {
-        const userId = match.Team2Ids[i];
+    for (const userId of match.Team2Ids) {
         // Get the user from their id
         const userCur: User = await get_user_from_ddb(dynamoDb, userId, tableName);
         team2Users.push(userCur);
     }
-    if(match.WinningTeam == 1) {
+    if(match.WinningTeam === 1) {
         const [updatedTeam1, updatedTeam2] = calculatePoints(team1Users, team2Users);
         await updateTeamUsers(match, updatedTeam1, updatedTeam2);
     }
-    else if(match.WinningTeam == 2) {
+    else if(match.WinningTeam === 2) {
         const [updatedTeam2, updatedTeam1] = calculatePoints(team2Users, team1Users);
         await updateTeamUsers(match, updatedTeam1, updatedTeam2);
     }
@@ -192,8 +186,7 @@ export const reportMatch = async (match: Match, id: string, tableName: string): 
 }
 
 const updateTeamUsers = async (match: Match, updatedTeam1: User[], updatedTeam2: User[]): Promise<any> => {
-    for (let i = 0; i < updatedTeam1.length; i++) {
-        const userCur = updatedTeam1[i];
+    for (const userCur of updatedTeam1) {
         if(userCur.PlacementMatchIds === undefined || userCur.PlacementMatchIds === null) {
             userCur.PlacementMatchIds = [];
         }
@@ -202,8 +195,7 @@ const updateTeamUsers = async (match: Match, updatedTeam1: User[], updatedTeam2:
         }
         await update_user_from_ddb(dynamoDb, userCur.Id, userCur, undefined);
     }
-    for (let i = 0; i < updatedTeam2.length; i++) {
-        const userCur = updatedTeam2[i];
+    for (const userCur of updatedTeam2) {
         if(userCur.PlacementMatchIds === undefined || userCur.PlacementMatchIds === null) {
             userCur.PlacementMatchIds = [];
         }
@@ -245,7 +237,7 @@ export const getOne = async (event: any, context: Context): Promise<any> => {
           EntityType: 'match'
         },
     };
-    
+
     // fetch user from the database by id
     try {
         const result = await dynamoDb.get(params).promise();
@@ -266,18 +258,20 @@ export const getOne = async (event: any, context: Context): Promise<any> => {
 export const getByMatchNum = async (event: any, context: Context): Promise<any> => {
     const params = {
         TableName: process.env.DYNAMODB_TABLE,
-        FilterExpression: 'MatchNumber = :matchNum',
+        IndexName: 'EntityTypeMatchNumberIndex',
+        KeyConditionExpression: 'EntityType = :hashKey AND MatchNumber = :matchNum',
         ExpressionAttributeValues: {
-            ':matchNum': parseInt(event.queryStringParameters.matchNumber)
-        }
+            ':hashKey': 'match',
+            ':matchNum': Number.parseInt(event.queryStringParameters.matchNumber, 10)
+        },
     };
-    
+
     // fetch user from the database by id
     try {
-        const result = await dynamoDb.scan(params).promise();
+        const result = await dynamoDb.query(params).promise();
         if(result.Count && result.Count > 0) {
-            // Only grab the first item. 
-            // Could be improved later to throw an exception if there are 
+            // Only grab the first item.
+            // Could be improved later to throw an exception if there are
             //  more than 1 match with the same number.
             const retVal = result.Items[0];
             const response = {
@@ -286,18 +280,21 @@ export const getByMatchNum = async (event: any, context: Context): Promise<any> 
             };
             return response;
         }
+        else {
+            throw new Error(JSON.stringify({ error: 'invalid result from dynamodb' , res: result }));
+        }
     } catch(error) {
         return {
             statusCode: error.statusCode || 501,
             headers: { 'Content-Type': 'text/plain' },
-            body: 'Couldn\'t fetch the match for matchNumber ' + event.queryStringParameters.matchNumber,
+            body: 'Couldn\'t fetch the match for matchNumber ' + event.queryStringParameters.matchNumber + '\n Error: ' + error,
         };
     }
 };
 
 export const getAll = async (event: any, context: Context): Promise<any> => {
     try {
-        var filteredResults = await get_all_matches_from_ddb(dynamoDb, undefined);
+        const filteredResults = await get_all_matches_from_ddb(dynamoDb, undefined);
         const response = {
             statusCode: 200,
             body: JSON.stringify(filteredResults),
