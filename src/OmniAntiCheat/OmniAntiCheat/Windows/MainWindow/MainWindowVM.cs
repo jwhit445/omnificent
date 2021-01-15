@@ -8,6 +8,7 @@ using Core.Omni.API.Models;
 using Core.Omni.MVVM;
 using Core.Omni.Utilities;
 using ICSharpCode.SharpZipLib.Zip;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -33,7 +34,7 @@ namespace OmniAntiCheat.Windows {
 		private const string RUNNING_STRING = "Running...";
 		private const string FINDING_PROCESS = "Finding Process...";
 		private const string AWS_USER = "AKIASNWLQTJB7LD6PPDP";
-		private const string AWS_SECRET = "";
+		private const string AWS_SECRET = "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";
 		private const string AWS_BUCKET_NAME = "omnificent-api-alpha-upload-log-events";
 		private const int GAME_POLLING_SECONDS = 3;
 		private const int HEARTBEAT_UNCHANGED_INTERVAL = 30;

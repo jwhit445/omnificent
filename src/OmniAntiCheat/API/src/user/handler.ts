@@ -1,6 +1,7 @@
 import { Context } from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk';
 import { v4 } from "uuid";
+import { User } from './user';
 
 const dynamoDb = new DynamoDB.DocumentClient()
 
@@ -91,7 +92,7 @@ export const updateInfo = async (event: any, context: Context): Promise<any> => 
         }
     }
     try {
-        const data = JSON.parse(event.body)
+        const data = JSON.parse(event.body);
         const userInfo = {
             IsMossRunning: data.IsMossRunning,
             IsRogueCompanyRunning: data.IsRogueCompanyRunning
@@ -102,10 +103,13 @@ export const updateInfo = async (event: any, context: Context): Promise<any> => 
                 PK: `#USER#${headerInfo.Id}`,
                 SK: `PROFILE`
             },
-            UpdateExpression: 'set IsMossRunning = :mossRunning, IsRogueCompanyRunning = :rocoRunning',
+            UpdateExpression: 'set IsMossRunning = :mossRunning, '
+                + 'IsRogueCompanyRunning = :rocoRunning, '
+                + 'LastHeartbeat = :heartbeat',
             ExpressionAttributeValues: {
                 ':mossRunning': userInfo.IsMossRunning,
-                ':rocoRunning': userInfo.IsRogueCompanyRunning
+                ':rocoRunning': userInfo.IsRogueCompanyRunning,
+                ':heartbeat': new Date().toUTCString()
             }
         }).promise();
         const response = {
@@ -117,24 +121,43 @@ export const updateInfo = async (event: any, context: Context): Promise<any> => 
         return {
             statusCode: error.statusCode || 501,
             headers: { 'Content-Type': 'text/plain' },
-            body: 'Couldn\'t update the user\'s info.',
+            body: 'Couldn\'t update the user\'s info.\n' + error,
         }
     }
 };
 
 export const getStatuses = async (event: any, context: Context): Promise<any> => {
     try {
-        // todo stuff
+        const data = JSON.parse(event.body);
+        const listUsers: User[] = data.ListUsers;
+        const tableName = process.env.DYNAMODB_TABLE;
+        const listKeys = listUsers.map(x => ({ PK: `#USER#${x.EpicID}`, SK: `PROFILE`}));
+        const params = {
+            RequestItems: {
+                [tableName]: {
+                    Keys: listKeys,
+                }
+            },
+        };
+        const res = await dynamoDb.batchGet(params).promise();
+        const retVal: any = {};
+        for(const item of res.Responses[tableName]) {
+            retVal[item.EpicID] = {
+                IsMossRunning: item.IsMossRunning,
+                IsRogueCompanyRunning: item.IsRogueCompanyRunning,
+                LastHeartbeat: item.LastHeartbeat
+            };
+        }
         const response = {
             statusCode: 200,
-            body: 'SUCCESS getStatuses!',
+            body: JSON.stringify({ UserStatuses: retVal }),
         };
         return response;
     } catch (error) {
         return {
             statusCode: error.statusCode || 501,
             headers: { 'Content-Type': 'text/plain' },
-            body: 'Couldn\'t get the statuses for the given user.',
+            body: 'Couldn\'t get the statuses for the given user.\n' + error,
         }
     }
 };

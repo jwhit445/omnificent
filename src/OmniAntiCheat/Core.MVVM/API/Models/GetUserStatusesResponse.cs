@@ -5,8 +5,8 @@ using System.Text;
 namespace Core.Omni.API.Models {
 	public class GetUserStatusesResponse {
 
-		///<summary>A dictionary of users to their statuses.</summary>
-		public Dictionary<User, UserStatus> UserStatuses { get; set; }
+		///<summary>A dictionary of EpicIDs to their statuses.</summary>
+		public Dictionary<string, UserStatus> UserStatuses { get; set; }
 
 	}
 
