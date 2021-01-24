@@ -35,5 +35,8 @@ namespace OmniAntiCheat {
 			});
 		}
 
+		private void PrismApplication_Exit(object sender, ExitEventArgs e) {
+			MainWindowVM.Inst.OnExit();
+		}
 	}
 }

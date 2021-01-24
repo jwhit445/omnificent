@@ -19,8 +19,8 @@ namespace Core.Omni.API {
 		///<summary>Uploads the state of the current user. Must be authenticated.</summary>
 		Task UploadUserInfo(UploadUserInfoRequest request);
 
-		///<summary>Returns the URL needed to upload files to S3.</summary>
-		Task<GetS3UrlResponse> GetS3UrlForLogs();
+		///<summary>Creates a log event for the given information.</summary>
+		Task CreateLogEvent(CreateLogEventRequest request);
 
 		///<summary>Returns logs for the given users.</summary>
 		Task<GetLogsForUserResponse> GetLogsForUsers(GetLogsForUserRequest request);

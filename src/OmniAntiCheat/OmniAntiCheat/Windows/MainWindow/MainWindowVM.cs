@@ -1,23 +1,19 @@
-﻿using Amazon;
-using Amazon.S3;
-using Amazon.S3.Transfer;
-using Core;
-using Core.Extensions;
-using Core.Omni.API;
-using Core.Omni.API.Models;
-using Core.Omni.MVVM;
-using Core.Omni.Utilities;
-using ICSharpCode.SharpZipLib.Zip;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using Amazon;
+using Amazon.S3;
+using Amazon.S3.Transfer;
+using Core;
+using Core.Omni.API;
+using Core.Omni.API.Models;
+using Core.Omni.MVVM;
+using Core.Omni.Utilities;
 
 namespace OmniAntiCheat.Windows {
 
@@ -40,11 +36,14 @@ namespace OmniAntiCheat.Windows {
 		private const int HEARTBEAT_UNCHANGED_INTERVAL = 30;
 		private const int HEARTBEAT_POLLING_INTERVAL = 2;
 
+		public static MainWindowVM Inst { get; set; }
+
 		private string _mossLocation = null;
 		private Process _mossCurrentProcess = null;
 		private Process _gameCurrentProcess = null;
 		private Action _onRogueCompanyClosed = null;
 		private DateTime _lastHeartbeatSent = DateTime.MinValue;
+		private DateTime _lastMossStart = DateTime.MinValue;
 		private bool _previousIsMossRunning = false;
 		private bool _previousIsGameRunning = false;
 		private RegionEndpoint AmazonEndpoint { get; } = RegionEndpoint.USEast2;
@@ -96,6 +95,7 @@ namespace OmniAntiCheat.Windows {
 		}
 
 		public MainWindowVM(IOmniAPI omniAPI) {
+			Inst = this;
 			_omniAPI = omniAPI;
 			CheckForMossInstallation();
 			if(!TryGetScrapedEpicInfo(out string errorMessage)) {
@@ -105,6 +105,7 @@ namespace OmniAntiCheat.Windows {
 			}
 			TaskUtils.FireAndForget(StartPollForGameEvents());
 			TaskUtils.FireAndForget(Login());
+			
 		}
 
 		///<summary>Starts Moss and the game client.</summary>
@@ -117,11 +118,13 @@ namespace OmniAntiCheat.Windows {
 				MessageBox.Show("Rougue Company is currently running. Please close before proceeding.");
 				return;
 			}
+			_lastMossStart = DateTime.Now;
 			MossStatus = STARTING_STRING;
 			try {
 				_mossCurrentProcess = Process.Start(_mossLocation, "ROG");
 				_mossCurrentProcess.EnableRaisingEvents = true;
 				_mossCurrentProcess.Exited += async (o, e) => {
+					IsUploadingToS3 = true;
 					MossStatus = NA_STRING;
 					_mossCurrentProcess = null;
 					if(_gameCurrentProcess != null) {
@@ -131,7 +134,6 @@ namespace OmniAntiCheat.Windows {
 							_gameCurrentProcess.Kill();
 						});
 					}
-					IsUploadingToS3 = true;
 					await TransferSession();
 					IsUploadingToS3 = false;
 				};
@@ -231,59 +233,48 @@ namespace OmniAntiCheat.Windows {
 				MessageBox.Show($"Unable to transfer logs. File at: {lastPathValue} does not exist.");
 				return;
 			}
-			await ExUtils.SwallowAnyExceptionAsync(async () => {
-				await UploadZipToAmazon(lastPathValue);
-			});
-            //ZipInputStream zipInputStream = null;
-            //try {
-            //    try {
-            //        zipInputStream = new ZipInputStream(File.OpenRead(lastPathValue));
-            //    }
-            //    catch (Exception e) {
-            //        MessageBox.Show($"Unable to open zip file. Error Message: {e.Message}");
-            //        return;
-            //    }
-            //    List<Func<Task>> listUploadTasks = new List<Func<Task>>();
-            //    byte[] data = new byte[4096];
-            //    ZipEntry zipEntry = null;
-            //    List<string> listErrorMessages = new List<string>();
-            //    while ((zipEntry = zipInputStream.GetNextEntry()) != null) {
-            //        string fileName = zipEntry.Name;
-            //        int size = zipInputStream.Read(data, 0, data.Length);
-            //        List<byte> fileBytes = new List<byte>();
-            //        while (size > 0) {
-            //            fileBytes.AddRange(data);
-            //            size = zipInputStream.Read(data, 0, data.Length);
-            //        }
-            //        listUploadTasks.Add(async () => {
-            //            try {
-            //                await UploadBytesToAmazon(fileName, fileBytes.ToArray());
-            //            }
-            //            catch (Exception e) {
-            //                listErrorMessages.Add($"File: {fileName} failed to upload. Error Message: {e.Message}");
-            //            }
-            //        });
-            //    }
-            //    await TaskUtils.WhenAll(listUploadTasks);
-            //    if (listErrorMessages.IsNullOrEmpty()) {
-            //        //Perfect upload. We can clean up the zip for them.
-            //        ExUtils.SwallowAnyException(() => {
-            //            File.Delete(lastPathValue);
-            //        });
-            //    }
-            //    else {
-            //        MessageBox.Show(string.Join("\r\n", listErrorMessages));
-            //    }
-            //}
-            //finally {
-            //    zipInputStream.Dispose();
-            //}
+			string s3URL;
+			try {
+				s3URL = await UploadZipToAmazon(lastPathValue);
+			}
+			catch(Exception e) {
+				MessageBox.Show($"Error uploading logs: {e.Message}");
+				return;
+			}
+			try {
+				await _omniAPI.CreateLogEvent(new CreateLogEventRequest {
+					S3Url = s3URL,
+					DateTimeStarted = _lastMossStart.ToUniversalTime(), 
+				});
+			}
+			catch(Exception e) {
+				MessageBox.Show($"Error creating log event: {e.Message}");
+				return;
+			}
         }
 
-		private async Task UploadZipToAmazon(string fullZipPath) {
+		public void OnExit() {
+			Task.Run(async () => {
+				if(_mossCurrentProcess != null) {
+					MossStatus = CLOSING_STRING;
+					_mossCurrentProcess.CloseMainWindow();
+					_mossCurrentProcess.CloseMainWindow();
+					_mossCurrentProcess.WaitForExit();
+					_gameCurrentProcess?.WaitForExit();
+				}
+				do {
+					await Task.Delay(100);
+				} while(IsUploadingToS3);
+			}).GetAwaiter().GetResult();
+		}
+
+		///<summary>Uploads the zip to amazon. Returns the publicly available S3 URL.</summary>
+		private async Task<string> UploadZipToAmazon(string fullZipPath) {
 			AmazonS3Client client = new AmazonS3Client(AWS_USER, AWS_SECRET, AmazonEndpoint);
 			TransferUtility transferUtility = new TransferUtility(client);
-			await transferUtility.UploadAsync(fullZipPath, AWS_BUCKET_NAME, $"{EpicID}/{DateTime.Today:yyyy-MM-dd}/{Path.GetFileName(fullZipPath)}");
+			string filePath = $"{EpicID}/{DateTime.Today:yyyy-MM-dd}/{Path.GetFileName(fullZipPath)}";
+			await transferUtility.UploadAsync(fullZipPath, AWS_BUCKET_NAME, filePath);
+			return $"https://{AWS_BUCKET_NAME}.s3.{AmazonEndpoint.SystemName}.amazonaws.com/{filePath}";
 		}
 
 		private async Task UploadBytesToAmazon(string fileName, byte[] bytes) {

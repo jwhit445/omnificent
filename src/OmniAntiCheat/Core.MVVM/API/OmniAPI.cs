@@ -26,8 +26,8 @@ namespace Core.Omni.API {
 			await RunApiCall<string, UploadUserInfoRequest>($"{API_BASE_URL}user/info", HttpMethod.PUT, request);
 		}
 
-		public async Task<GetS3UrlResponse> GetS3UrlForLogs() {
-			return await RunApiCall<GetS3UrlResponse, string>($"{API_BASE_URL}logevent/url", HttpMethod.GET);
+		public async Task CreateLogEvent(CreateLogEventRequest request) {
+			await RunApiCall<string, CreateLogEventRequest>($"{API_BASE_URL}logevent", HttpMethod.POST, request);
 		}
 
 		public async Task<GetLogsForUserResponse> GetLogsForUsers(GetLogsForUserRequest request) {
@@ -62,6 +62,9 @@ namespace Core.Omni.API {
 			});
 			if(!responseMessage.IsSuccessStatusCode) {
 				throw new ApplicationException($"Error making API Call.\n{(int)responseMessage.StatusCode} - {responseMessage.StatusCode}\n{bodyResponse}");
+			}
+			if(typeof(T) == typeof(string)) {
+				return (T)(object)bodyResponse;
 			}
 			return JsonConvert.DeserializeObject<T>(bodyResponse);
 		}
