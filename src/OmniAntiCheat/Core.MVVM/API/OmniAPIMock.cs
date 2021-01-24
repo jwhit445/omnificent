@@ -15,11 +15,7 @@ namespace Core.Omni.API {
 		}
 
 		public Task<GetLogsForUserResponse> GetLogsForUsers(GetLogsForUserRequest request) {
-			return Task.FromResult(new GetLogsForUserResponse {
-				RecentUserEvents = new Dictionary<User, List<LogEvent>> {
-					{ new User() { }, new List<LogEvent> { } },
-				},
-			});
+			throw new NotImplementedException();
 		}
 
 		public Task<GetUserStatusesResponse> GetUserStatuses(GetUserStatusesRequest request) {

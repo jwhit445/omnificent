@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using Core.Omni.API;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -24,13 +25,13 @@ namespace Omni.Bot {
                     services
                         .Configure<BotSettings>(config.GetSection(nameof(BotSettings)));
                     services
+                        .AddSingleton<IOmniAPI, OmniAPI>()
                         .AddSingleton<LogModule>()
                         .AddSingleton<LoggingService>()
                         .AddSingleton(serviceProvider => {
                             return new CommandService(new CommandServiceConfig {
                                 LogLevel = LogSeverity.Info,
                                 CaseSensitiveCommands = false,
-
                             });
                         })
                         .AddSingleton<DiscordSocketClient>()

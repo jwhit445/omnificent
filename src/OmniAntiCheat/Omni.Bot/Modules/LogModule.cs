@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Core.Omni.API;
+using Core.Omni.API.Models;
+using Discord;
 using Discord.Commands;
 
 namespace Omni.Bot.Modules {
@@ -10,8 +14,10 @@ namespace Omni.Bot.Modules {
 		private const string PING_COMMAND = "ping";
 		private const string LOGS_COMMAND = "logs";
 
-		public LogModule() {
+		private IOmniAPI _omniAPI { get; }
 
+		public LogModule(IOmniAPI omniAPI) {
+			_omniAPI = omniAPI;
 		}
 
 		[Command(PING_COMMAND)]
@@ -28,12 +34,75 @@ namespace Omni.Bot.Modules {
 				.Select(x => x.Trim())
 				.Distinct()
 				.ToList();
-			StringBuilder strBuilder = new StringBuilder();
-			strBuilder.AppendLine("The selected users were:");
-			foreach(string username in listUsernames) {
-				strBuilder.AppendLine(username);
+			GetLogsForUserResponse response;
+			try {
+				response = await _omniAPI.GetLogsForUsers(new GetLogsForUserRequest {
+					ListUsername = listUsernames,
+				});
+			} 
+			catch(Exception e) {
+				await ReplyAsync($"There was an error getting the logs: {e.Message}");
+				return;
 			}
-			await ReplyAsync(strBuilder.ToString());
+			/*response = new GetLogsForUserResponse { RecentUserEvents = new Dictionary<string, List<LogEvent>> { 
+				{ "Luke", 
+					new List<LogEvent> { 
+					new LogEvent { 
+						StartDateTime = DateTime.UtcNow,
+						EndDateTime = DateTime.UtcNow.AddMinutes(20),
+						DownloadLink = "https://google.com"
+					},
+					new LogEvent {
+						StartDateTime = DateTime.UtcNow.AddDays(1),
+						EndDateTime = DateTime.UtcNow.AddDays(1).AddMinutes(30),
+						DownloadLink = "https://google.com"
+					}
+				} } ,
+				{ "Josh",
+					new List<LogEvent> {
+					new LogEvent {
+						StartDateTime = DateTime.UtcNow,
+						EndDateTime = DateTime.UtcNow.AddMinutes(20),
+						DownloadLink = "https://google.com"
+					},
+					new LogEvent {
+						StartDateTime = DateTime.UtcNow.AddDays(1),
+						EndDateTime = DateTime.UtcNow.AddDays(1).AddMinutes(30),
+						DownloadLink = "https://google.com"
+					}
+				} } ,
+			} 
+			};*/
+			StringBuilder strBuilder = new StringBuilder();
+			foreach(KeyValuePair<string, List<LogEvent>> userKeyValuePair in response.RecentUserEvents.OrderBy(x => x.Key)) {
+				if(strBuilder.Length > 0) {
+					strBuilder.AppendLine();
+				}
+				strBuilder.AppendLine($"**{userKeyValuePair.Key}:**");
+				foreach(LogEvent logEvent in userKeyValuePair.Value.OrderByDescending(x => x.StartDateTime)) {
+					DateTime easternStartTime = UTCToEastern(logEvent.StartDateTime);
+					DateTime easternEndTime = UTCToEastern(logEvent.EndDateTime);
+					string timezone = easternStartTime.IsDaylightSavingTime() ? "EDT" : "EST";
+					string dateTimeFormat = "MM/dd/yyyy h:mm tt";
+					strBuilder.AppendLine($"{easternStartTime.ToString(dateTimeFormat)} - {(easternStartTime.Date != easternEndTime.Date ? easternEndTime.ToString(dateTimeFormat) : easternEndTime.ToString("h:mm tt"))} ({timezone})" +
+						$": [Download]({logEvent.DownloadLink})");
+				}
+			}
+			EmbedBuilder embed = new EmbedBuilder();
+			string title = "Logs";
+			if(response.RecentUserEvents.Count != listUsernames.Count) {
+				title = $"Unable to find user(s): {string.Join(",", listUsernames.Except(response.RecentUserEvents.Select(x => x.Key)))}";
+			}
+			embed.AddField(title, strBuilder.Length > 0 ? strBuilder.ToString() : "N/A");
+			await ReplyAsync("", embed: embed.Build());
+		}
+
+		private DateTime UTCToEastern(DateTime utc) {
+			bool isDaylightSavings = DateTime.Now.IsDaylightSavingTime();
+			TimeZoneInfo timeZone = TimeZoneInfo.FindSystemTimeZoneById(isDaylightSavings ? "Eastern Daylight Time" : "Eastern Standard Time");
+			DateTime eastern = TimeZoneInfo.ConvertTimeFromUtc(utc, timeZone);
+			return eastern;
 		}
 	}
+
 }
