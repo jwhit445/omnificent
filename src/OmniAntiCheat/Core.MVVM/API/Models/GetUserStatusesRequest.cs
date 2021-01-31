@@ -5,8 +5,8 @@ using System.Text;
 namespace Core.Omni.API.Models {
 	public class GetUserStatusesRequest {
 
-		///<summary>The user for this request. Uses epic id if both username and epic id are provided.</summary>
-		public List<User> ListUsers { get; set; }
+		///<summary>The user for this request.</summary>
+		public List<string> ListUsernames { get; set; }
 
 	}
 }

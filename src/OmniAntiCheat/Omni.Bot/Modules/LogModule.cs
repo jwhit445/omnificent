@@ -7,12 +7,14 @@ using Core.Omni.API;
 using Core.Omni.API.Models;
 using Discord;
 using Discord.Commands;
+using UserStatus = Core.Omni.API.Models.UserStatus;
 
 namespace Omni.Bot.Modules {
 	public class LogModule : ModuleBase<SocketCommandContext> {
 
 		private const string PING_COMMAND = "ping";
 		private const string LOGS_COMMAND = "logs";
+		private const string STATUS_COMMAND = "status";
 
 		private IOmniAPI _omniAPI { get; }
 
@@ -24,6 +26,46 @@ namespace Omni.Bot.Modules {
 		[Summary("Checks whether the bot is working or not.")]
 		public async Task Ping() {
 			await ReplyAsync("Pong!");
+		}
+
+		[Command(STATUS_COMMAND)]
+		[Summary("Retrieves statuses for the given list of users.")]
+		public async Task GetStatusesForUsers([Remainder]string arguments) {
+			List<string> listUsernames = arguments
+				.Split("//")
+				.Select(x => x.Trim())
+				.Distinct()
+				.ToList();
+			GetUserStatusesResponse response;
+			try {
+				response = await _omniAPI.GetUserStatuses(new GetUserStatusesRequest {
+					ListUsernames = listUsernames,
+				});
+			} 
+			catch(Exception e) {
+				await ReplyAsync($"There was an error getting the statuses: {e.Message}");
+				return;
+			}
+			StringBuilder strBuilder = new StringBuilder();
+			foreach(KeyValuePair<string, UserStatus> userKeyValuePair in response.UserStatuses.OrderBy(x => x.Key)) {
+				if(strBuilder.Length > 0) {
+					strBuilder.AppendLine();
+				}
+				strBuilder.AppendLine($"**{userKeyValuePair.Key}:**");
+				DateTime easternHeartbeat = UTCToEastern(userKeyValuePair.Value.LastHeartbeat);
+				string timezone = easternHeartbeat.IsDaylightSavingTime() ? "EDT" : "EST";
+				string dateTimeFormat = "MM/dd/yyyy h:mm tt";
+				strBuilder.AppendLine($"Last Heartbeat: **{easternHeartbeat.ToString(dateTimeFormat)} ({timezone})**");
+				strBuilder.AppendLine($"Is Moss Active: **{userKeyValuePair.Value.IsMossRunning}**");
+				strBuilder.AppendLine($"Is Rogue Company Active: **{userKeyValuePair.Value.IsRogueCompanyRunning}**");
+			}
+			EmbedBuilder embed = new EmbedBuilder();
+			string title = "Statuses";
+			if(response.UserStatuses.Count != listUsernames.Count) {
+				title = $"Unable to find user(s): {string.Join(",", listUsernames.Except(response.UserStatuses.Select(x => x.Key)))}";
+			}
+			embed.AddField(title, strBuilder.Length > 0 ? strBuilder.ToString() : "N/A");
+			await ReplyAsync("", embed: embed.Build());
 		}
 
 		[Command(LOGS_COMMAND)]
@@ -44,35 +86,6 @@ namespace Omni.Bot.Modules {
 				await ReplyAsync($"There was an error getting the logs: {e.Message}");
 				return;
 			}
-			/*response = new GetLogsForUserResponse { RecentUserEvents = new Dictionary<string, List<LogEvent>> { 
-				{ "Luke", 
-					new List<LogEvent> { 
-					new LogEvent { 
-						StartDateTime = DateTime.UtcNow,
-						EndDateTime = DateTime.UtcNow.AddMinutes(20),
-						DownloadLink = "https://google.com"
-					},
-					new LogEvent {
-						StartDateTime = DateTime.UtcNow.AddDays(1),
-						EndDateTime = DateTime.UtcNow.AddDays(1).AddMinutes(30),
-						DownloadLink = "https://google.com"
-					}
-				} } ,
-				{ "Josh",
-					new List<LogEvent> {
-					new LogEvent {
-						StartDateTime = DateTime.UtcNow,
-						EndDateTime = DateTime.UtcNow.AddMinutes(20),
-						DownloadLink = "https://google.com"
-					},
-					new LogEvent {
-						StartDateTime = DateTime.UtcNow.AddDays(1),
-						EndDateTime = DateTime.UtcNow.AddDays(1).AddMinutes(30),
-						DownloadLink = "https://google.com"
-					}
-				} } ,
-			} 
-			};*/
 			StringBuilder strBuilder = new StringBuilder();
 			foreach(KeyValuePair<string, List<LogEvent>> userKeyValuePair in response.RecentUserEvents.OrderBy(x => x.Key)) {
 				if(strBuilder.Length > 0) {
