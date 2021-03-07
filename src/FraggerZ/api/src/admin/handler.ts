@@ -98,7 +98,7 @@ export const addMigrateAttribute = async (event: any, context: Context) => {
         do {
             const result = await dynamoDb.query(params).promise();
             if(result.Items) {
-                //Add Migrated=0 to row for each user item
+                // Add Migrated=0 to row for each user item
                 for(const item of result.Items) {
                     await dynamoDb.update({
                         TableName: 'fraggerz-api-alpha',
@@ -112,7 +112,7 @@ export const addMigrateAttribute = async (event: any, context: Context) => {
                         }
                     }).promise();
                 }
-                
+
             }
             params.ExclusiveStartKey = result.LastEvaluatedKey;
         }
@@ -123,11 +123,11 @@ export const addMigrateAttribute = async (event: any, context: Context) => {
 };
 
 export const migrateTableStream = async (event: any, context: Context) => {
-    //console.log('Received event:', JSON.stringify(event, null, 2));
+    // console.log('Received event:', JSON.stringify(event, null, 2));
     for (const record of event.Records) {
-        console.log(record.eventID);
-        console.log(record.eventName);
-        console.log('DynamoDB Record: %j', record.dynamodb);
+        // console.log(record.eventID);
+        // console.log(record.eventName);
+        // console.log('DynamoDB Record: %j', record.dynamodb);
     }
     return `Successfully processed ${event.Records.length} records.`;
 };

@@ -1,5 +1,6 @@
 import { Handler, Context } from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk'
+import { UserMatch } from '../models/UserMatch';
 
 const dynamoDb = new DynamoDB.DocumentClient()
 

@@ -11,7 +11,13 @@ export const INITIAL_SIGMA: number = 8.333;
 const dynamoDb = new DynamoDB.DocumentClient()
 
 export const register: Handler = (event: any, context: Context, callback: any) => {
-    const data = JSON.parse(event.body)
+    const data: RegisterRequest = JSON.parse(event.body);
+    // TODO Implement
+    let result: RegisterResult;
+    // TODO Implement result
+    return result;
+
+
     try {
         if (!validateUser(data)) {
             callback(new Error("Invalid request data"));

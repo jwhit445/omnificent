@@ -1,8 +1,7 @@
-service: fraggerz-api
+service: fraggerz-api-2
 
 provider:
   name: aws
-  profile: fraggerz
   runtime: nodejs12.x
   region: us-east-2
   stage: alpha
@@ -21,8 +20,6 @@ provider:
       Resource: [
         "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}",
         "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}/index/*",
-        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:service}-test",
-        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:service}-test/index/*"
       ]
   apiGateway:
     shouldStartNameWithService: true

@@ -1,11 +1,12 @@
 import { DynamoDB } from "aws-sdk";
+import { QueryInput } from "aws-sdk/clients/dynamodb";
 import { v4 } from "uuid";
 
 export class Match {
     Id: string;
-    MatchNumber: number;
-    Captain1Id: string;
-    Captain2Id: string;
+    MatchNumber?: number;
+    Captain1Id?: string;
+    Captain2Id?: string;
     PickingCaptainId: string;
     MapName: string;
     GameName: string;
@@ -92,7 +93,36 @@ export function match_to_ddb_update_params(id: string, data: any): any {
     }
 }
 
+enum PkType {
+    Full,
+    Partial
+}
+
+export async function get_all_by_pk(dynamoDb: DynamoDB.DocumentClient, pk: string, pkType: PkType): Promise<any> {
+    try {
+        const result = await dynamoDb.query({
+            TableName: process.env.DYNAMODB_TABLE,
+            IndexName: 'EntityTypeMatchNumberIndex',
+            KeyConditionExpression: pkType == Full ? 'EntityType = :hashKey' : begins_with(EntityType, :hashKey),
+            ExpressionAttributeValues: {
+              ':hashKey': pk,
+            },
+            ScanIndexForward: true // true or false to sort by MatchNumber Sort/Range key ascending or descending
+        })
+        .promise();
+        if(result.Count && result.Items) {
+            return result.Items;
+        }
+        else {
+            throw new Error('No match results found in db');
+        }
+    } catch (error) {
+        throw new Error('Couldn\'t fetch all matches: '+error);
+    }
+}
+
 export async function get_all_matches_from_ddb(dynamoDb: DynamoDB.DocumentClient): Promise<any> {
+
     try {
         const result = await dynamoDb.query({
             TableName: process.env.DYNAMODB_TABLE,
