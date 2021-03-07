@@ -1,4 +1,4 @@
-//This file is auto-generated.
+// This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 import { UserPK } from "./models/UserPK";
@@ -11,9 +11,9 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: U
 	if(pk.UserId === null || pk.UserId === undefined) {
 		throw new Error("PK property: UserId is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
-	var skKey = 'MATCH#';
+	let isPartialSK = true;
+	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
+	let skKey = 'MATCH#';
 	if(sk.MatchNumber !== null && sk.MatchNumber !== undefined) {
 		skKey += `${sk.MatchNumber}`
 		isPartialSK = false;
@@ -42,9 +42,9 @@ export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserMa
 	if(pk.MatchNumber === null || pk.MatchNumber === undefined) {
 		throw new Error("PK property: MatchNumber is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `MATCH#${pk.MatchNumber}`;
-	var skKey = '#USER#';
+	let isPartialSK = true;
+	const pkKey = `MATCH#${pk.MatchNumber}`;
+	let skKey = '#USER#';
 	if(sk.ServerId !== null && sk.ServerId !== undefined) {
 		skKey += `${sk.ServerId}#`
 		if(sk.UserId !== null && sk.UserId !== undefined) {

@@ -1,4 +1,4 @@
-//This file is auto-generated.
+// This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 import { GamePK } from "./models/GamePK";
@@ -10,9 +10,9 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: GamePK): Prom
 	if(pk.GameCode === null || pk.GameCode === undefined) {
 		throw new Error("PK property: GameCode is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `#GAME#${pk.ServerId}#${pk.GameCode}`;
-	var skKey = '#GAME#';
+	let isPartialSK = true;
+	const pkKey = `#GAME#${pk.ServerId}#${pk.GameCode}`;
+	let skKey = '#GAME#';
 	if(pk.ServerId !== null && pk.ServerId !== undefined) {
 		skKey += `${pk.ServerId}#`
 		if(pk.GameCode !== null && pk.GameCode !== undefined) {

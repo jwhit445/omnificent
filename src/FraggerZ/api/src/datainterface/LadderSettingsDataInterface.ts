@@ -1,4 +1,4 @@
-//This file is auto-generated.
+// This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 import { LadderPK } from "./models/LadderPK";
@@ -14,9 +14,9 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: LadderPK, sk:
 	if(pk.LadderName === null || pk.LadderName === undefined) {
 		throw new Error("PK property: LadderName is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `#LADDER#${pk.ServerId}#${pk.GameCode}#${pk.LadderName}`;
-	var skKey = 'SETTINGS#';
+	let isPartialSK = true;
+	const pkKey = `#LADDER#${pk.ServerId}#${pk.GameCode}#${pk.LadderName}`;
+	let skKey = 'SETTINGS#';
 	if(sk.SeasonId !== null && sk.SeasonId !== undefined) {
 		skKey += `${sk.SeasonId}`
 		isPartialSK = false;
@@ -45,9 +45,9 @@ export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: Ladder
 	if(pk.SeasonId === null || pk.SeasonId === undefined) {
 		throw new Error("PK property: SeasonId is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `SETTINGS#${pk.SeasonId}`;
-	var skKey = '#LADDER#';
+	let isPartialSK = true;
+	const pkKey = `SETTINGS#${pk.SeasonId}`;
+	let skKey = '#LADDER#';
 	if(sk.ServerId !== null && sk.ServerId !== undefined) {
 		skKey += `${sk.ServerId}#`
 		if(sk.GameCode !== null && sk.GameCode !== undefined) {

@@ -1,4 +1,4 @@
-//This file is auto-generated.
+// This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 import { UserPK } from "./models/UserPK";
@@ -11,9 +11,9 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: U
 	if(pk.UserId === null || pk.UserId === undefined) {
 		throw new Error("PK property: UserId is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
-	var skKey = 'PLATFORM#';
+	let isPartialSK = true;
+	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
+	let skKey = 'PLATFORM#';
 	if(sk.GameCode !== null && sk.GameCode !== undefined) {
 		skKey += `${sk.GameCode}#`
 		if(sk.TeamName !== null && sk.TeamName !== undefined) {
@@ -48,9 +48,9 @@ export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserTe
 	if(pk.TeamName === null || pk.TeamName === undefined) {
 		throw new Error("PK property: TeamName is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `PLATFORM#${pk.GameCode}#${pk.TeamName}`;
-	var skKey = '#USER#';
+	let isPartialSK = true;
+	const pkKey = `PLATFORM#${pk.GameCode}#${pk.TeamName}`;
+	let skKey = '#USER#';
 	if(sk.ServerId !== null && sk.ServerId !== undefined) {
 		skKey += `${sk.ServerId}#`
 		if(sk.UserId !== null && sk.UserId !== undefined) {

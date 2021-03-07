@@ -1,4 +1,4 @@
-//This file is auto-generated.
+// This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 import { UserPK } from "./models/UserPK";
@@ -10,9 +10,9 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK): Prom
 	if(pk.UserId === null || pk.UserId === undefined) {
 		throw new Error("PK property: UserId is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
-	var skKey = '#USER#';
+	let isPartialSK = true;
+	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
+	let skKey = '#USER#';
 	if(pk.ServerId !== null && pk.ServerId !== undefined) {
 		skKey += `${pk.ServerId}#`
 		if(pk.UserId !== null && pk.UserId !== undefined) {

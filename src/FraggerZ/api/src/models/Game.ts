@@ -1,4 +1,4 @@
-//This file is auto-generated.
+// This file is auto-generated.
 
 import { GameCode } from "./GameCode";
 import { Map } from "./Map";

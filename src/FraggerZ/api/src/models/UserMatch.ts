@@ -1,4 +1,4 @@
-//This file is auto-generated.
+// This file is auto-generated.
 
 import { UserMatchStatus } from "./UserMatchStatus";
 

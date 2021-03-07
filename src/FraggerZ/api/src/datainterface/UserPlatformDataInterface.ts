@@ -1,4 +1,4 @@
-//This file is auto-generated.
+// This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 import { UserPK } from "./models/UserPK";
@@ -12,9 +12,9 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: U
 	if(pk.UserId === null || pk.UserId === undefined) {
 		throw new Error("PK property: UserId is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
-	var skKey = 'PLATFORM#';
+	let isPartialSK = true;
+	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
+	let skKey = 'PLATFORM#';
 	if(sk.PlatformCode !== null && sk.PlatformCode !== undefined) {
 		skKey += `${sk.PlatformCode}#`
 		if(sk.PlatformUsername !== null && sk.PlatformUsername !== undefined) {
@@ -49,9 +49,9 @@ export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserPl
 	if(pk.PlatformUsername === null || pk.PlatformUsername === undefined) {
 		throw new Error("PK property: PlatformUsername is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `PLATFORM#${pk.PlatformCode}#${pk.PlatformUsername}`;
-	var skKey = '#USER#';
+	let isPartialSK = true;
+	const pkKey = `PLATFORM#${pk.PlatformCode}#${pk.PlatformUsername}`;
+	let skKey = '#USER#';
 	if(sk.ServerId !== null && sk.ServerId !== undefined) {
 		skKey += `${sk.ServerId}#`
 		if(sk.UserId !== null && sk.UserId !== undefined) {
@@ -87,9 +87,9 @@ export async function getDBGSI1(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, s
 	if(pk.UserId === null || pk.UserId === undefined) {
 		throw new Error("PK property: UserId is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
-	var skKey = 'PLATFORM#';
+	let isPartialSK = true;
+	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
+	let skKey = 'PLATFORM#';
 	if(sk.PlatformCode !== null && sk.PlatformCode !== undefined) {
 		skKey += `${sk.PlatformCode}#`
 		if(sk.PlatformId !== null && sk.PlatformId !== undefined) {

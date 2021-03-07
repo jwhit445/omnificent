@@ -1,4 +1,4 @@
-//This file is auto-generated.
+// This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
 import { LadderPK } from "./models/LadderPK";
@@ -13,9 +13,9 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: LadderPK): Pr
 	if(pk.LadderName === null || pk.LadderName === undefined) {
 		throw new Error("PK property: LadderName is not set.")
 	}
-	var isPartialSK = true;
-	let pkKey = `#LADDER#${pk.ServerId}#${pk.GameCode}#${pk.LadderName}`;
-	var skKey = '#LADDER#';
+	let isPartialSK = true;
+	const pkKey = `#LADDER#${pk.ServerId}#${pk.GameCode}#${pk.LadderName}`;
+	let skKey = '#LADDER#';
 	if(pk.ServerId !== null && pk.ServerId !== undefined) {
 		skKey += `${pk.ServerId}#`
 		if(pk.GameCode !== null && pk.GameCode !== undefined) {
