@@ -1,0 +1,633 @@
+{
+  "ModelName": "FraggerZ Model",
+  "ModelMetadata": {
+    "Author": "Josh Whitney",
+    "DateCreated": "Mar 01, 2021, 11:42 PM",
+    "DateLastModified": "Mar 03, 2021, 02:25 PM",
+    "Description": "FraggerZ Model",
+    "AWSService": "Amazon DynamoDB",
+    "Version": "2.0"
+  },
+  "DataModel": [
+    {
+      "TableName": "fraggerz-api-alpha",
+      "KeyAttributes": {
+        "PartitionKey": {
+          "AttributeName": "PK",
+          "AttributeType": "S"
+        },
+        "SortKey": {
+          "AttributeName": "SK",
+          "AttributeType": "S"
+        }
+      },
+      "NonKeyAttributes": [
+        {
+          "AttributeName": "ClientCode",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "Id",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "GameCode",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "Username",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "IGN",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "StreamURL",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "DateTimeSuspensionEnd",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "DateTimePremiumExpire",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "DateTimeLastStatReset",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "PlatformCode",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "LadderName",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "SeasonId",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "MMR",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "Sigma",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "Wins",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "Losses",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "MatchNumber",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "Ladder_SK",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "DateTimeStarted",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "DateTimeEnded",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "MatchType",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "Map_SK",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "MatchStatus",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "MatchResult",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "PlayerType",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "TeamName",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "TeamSize",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "TeamSelectionType",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "RatingSystem",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "IsCharacterBanAllowed",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "IsCharacterProtectAllowed",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "CharacterName",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "MapIconURL",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "MapName",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "GSI1_SK",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "PlayerTeam",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "ClientId",
+          "AttributeType": "S"
+        }
+      ],
+      "TableFacets": [
+        {
+          "FacetName": "UserProfile",
+          "KeyAttributeAlias": {
+            "PartitionKeyAlias": "UserID",
+            "SortKeyAlias": "ProfileID"
+          },
+          "TableData": [
+            {
+              "PK": {
+                "S": "#USER#DISCORD#123123123"
+              },
+              "SK": {
+                "S": "PROFILE#RoCo"
+              },
+              "ClientCode": {
+                "S": "DISCORD"
+              },
+              "GameCode": {
+                "S": "DISCORD"
+              },
+              "Username": {
+                "S": "t1dev"
+              },
+              "IGN": {
+                "S": "t1dev"
+              },
+              "StreamURL": {
+                "S": "https://twitch.tv/t1dev"
+              },
+              "DateTimeSuspensionEnd": {
+                "S": "0001-01-01T00:00:00"
+              },
+              "DateTimePremiumExpire": {
+                "S": "2022-01-01"
+              },
+              "DateTimeLastStatReset": {
+                "S": "0001-01-01T12:00:00"
+              }
+            }
+          ],
+          "NonKeyAttributes": [
+            "ClientCode",
+            "GameCode",
+            "Username",
+            "IGN",
+            "StreamURL",
+            "DateTimeSuspensionEnd",
+            "DateTimePremiumExpire",
+            "DateTimeLastStatReset",
+            "ClientId"
+          ],
+          "DataAccess": {
+            "MySql": {}
+          }
+        },
+        {
+          "FacetName": "Platform",
+          "KeyAttributeAlias": {
+            "PartitionKeyAlias": "UserID",
+            "SortKeyAlias": "PlatformID"
+          },
+          "TableData": [
+            {
+              "PK": {
+                "S": "#USER#DISCORD#123123123"
+              },
+              "SK": {
+                "S": "PLATFORM#EPIC#t1dev"
+              },
+              "Id": {
+                "S": "99991239123"
+              },
+              "Username": {
+                "S": "t1dev"
+              },
+              "PlatformCode": {
+                "S": "EPIC"
+              },
+              "GSI1_SK": {
+                "S": "PLATFORM#EPIC#99991239123"
+              }
+            }
+          ],
+          "NonKeyAttributes": [
+            "Id",
+            "Username",
+            "PlatformCode",
+            "GSI1_SK"
+          ],
+          "DataAccess": {
+            "MySql": {}
+          }
+        },
+        {
+          "FacetName": "Ladder",
+          "KeyAttributeAlias": {
+            "PartitionKeyAlias": "UserId",
+            "SortKeyAlias": "LadderId"
+          },
+          "TableData": [
+            {
+              "PK": {
+                "S": "#USER#DISCORD#123123123"
+              },
+              "SK": {
+                "S": "LADDER#RoCo#PUGMain#3"
+              },
+              "GameCode": {
+                "S": "RoCo"
+              },
+              "LadderName": {
+                "S": "MainLadder"
+              },
+              "SeasonId": {
+                "S": "3"
+              },
+              "MMR": {
+                "S": "32.88"
+              },
+              "Sigma": {
+                "S": "7.412"
+              },
+              "Wins": {
+                "S": "2"
+              },
+              "Losses": {
+                "S": "0"
+              }
+            }
+          ],
+          "NonKeyAttributes": [
+            "GameCode",
+            "LadderName",
+            "SeasonId",
+            "MMR",
+            "Sigma",
+            "Wins",
+            "Losses"
+          ],
+          "DataAccess": {
+            "MySql": {}
+          }
+        },
+        {
+          "FacetName": "Match",
+          "KeyAttributeAlias": {
+            "PartitionKeyAlias": "UserId",
+            "SortKeyAlias": "MatchId"
+          },
+          "TableData": [
+            {
+              "PK": {
+                "S": "#USER#DISCORD#123123123"
+              },
+              "SK": {
+                "S": "MATCH#1"
+              },
+              "GameCode": {
+                "S": "RoCo"
+              },
+              "MatchNumber": {
+                "S": "1"
+              },
+              "Ladder_SK": {
+                "S": "LADDER#RoCo#PUGMain#3"
+              },
+              "DateTimeStarted": {
+                "S": "2021-03-02T14:01:00"
+              },
+              "DateTimeEnded": {
+                "S": "2021-03-02T14:31:00"
+              },
+              "MatchType": {
+                "S": "PUG"
+              },
+              "Map_SK": {
+                "S": "MAP#Skyfell"
+              },
+              "MatchStatus": {
+                "S": "Done"
+              },
+              "MatchResult": {
+                "S": "Win"
+              },
+              "PlayerTeam": {
+                "S": "Alpha"
+              }
+            },
+            {
+              "PK": {
+                "S": "#USER#DISCORD#123123123"
+              },
+              "SK": {
+                "S": "MATCH#2"
+              },
+              "GameCode": {
+                "S": "RoCo"
+              },
+              "MatchNumber": {
+                "S": "2"
+              },
+              "Ladder_SK": {
+                "S": "LADDER#RoCo#PUGMain#3"
+              },
+              "DateTimeStarted": {
+                "S": "2021-03-02T15:01:00"
+              },
+              "DateTimeEnded": {
+                "S": "2021-03-02T15:31:00"
+              },
+              "MatchType": {
+                "S": "PUG"
+              },
+              "Map_SK": {
+                "S": "MAP#Lockdown"
+              },
+              "MatchStatus": {
+                "S": "Done"
+              },
+              "MatchResult": {
+                "S": "Win"
+              },
+              "PlayerTeam": {
+                "S": "Bravo"
+              }
+            }
+          ],
+          "NonKeyAttributes": [
+            "GameCode",
+            "MatchNumber",
+            "Ladder_SK",
+            "DateTimeStarted",
+            "DateTimeEnded",
+            "MatchType",
+            "Map_SK",
+            "MatchStatus",
+            "MatchResult",
+            "PlayerTeam"
+          ],
+          "DataAccess": {
+            "MySql": {}
+          }
+        },
+        {
+          "FacetName": "Team",
+          "KeyAttributeAlias": {
+            "PartitionKeyAlias": "UserId",
+            "SortKeyAlias": "TeamId"
+          },
+          "TableData": [
+            {
+              "PK": {
+                "S": "#USER#DISCORD#123123123"
+              },
+              "SK": {
+                "S": "TEAM#RoCo#TheWinners"
+              },
+              "GameCode": {
+                "S": "RoCo"
+              },
+              "PlayerType": {
+                "S": "Captain"
+              },
+              "TeamName": {
+                "S": "TheWinners"
+              }
+            }
+          ],
+          "NonKeyAttributes": [
+            "GameCode",
+            "PlayerType",
+            "TeamName"
+          ],
+          "DataAccess": {
+            "MySql": {}
+          }
+        },
+        {
+          "FacetName": "LadderSettings",
+          "KeyAttributeAlias": {
+            "PartitionKeyAlias": "LadderId",
+            "SortKeyAlias": "SettingsId"
+          },
+          "TableData": [
+            {
+              "PK": {
+                "S": "#LADDER#RoCo#PUGMain"
+              },
+              "SK": {
+                "S": "SETTINGS#3"
+              },
+              "GameCode": {
+                "S": "RoCo"
+              },
+              "LadderName": {
+                "S": "PUGMain"
+              },
+              "SeasonId": {
+                "S": "3"
+              },
+              "TeamSize": {
+                "S": "4"
+              },
+              "TeamSelectionType": {
+                "S": "Automatic"
+              },
+              "RatingSystem": {
+                "S": "MMR"
+              },
+              "IsCharacterBanAllowed": {
+                "S": "true"
+              },
+              "IsCharacterProtectAllowed": {
+                "S": "false"
+              }
+            }
+          ],
+          "NonKeyAttributes": [
+            "GameCode",
+            "LadderName",
+            "SeasonId",
+            "TeamSize",
+            "TeamSelectionType",
+            "RatingSystem",
+            "IsCharacterBanAllowed",
+            "IsCharacterProtectAllowed",
+            "ClientCode",
+            "ClientId"
+          ],
+          "DataAccess": {
+            "MySql": {}
+          }
+        },
+        {
+          "FacetName": "GameCharacter",
+          "KeyAttributeAlias": {
+            "PartitionKeyAlias": "GameId",
+            "SortKeyAlias": "CharacterId"
+          },
+          "TableData": [
+            {
+              "PK": {
+                "S": "#GAME#RoCo"
+              },
+              "SK": {
+                "S": "CHARACTER#Phantom"
+              },
+              "CharacterName": {
+                "S": "Phantom"
+              }
+            },
+            {
+              "PK": {
+                "S": "#GAME#RoCo"
+              },
+              "SK": {
+                "S": "CHARACTER#Saint"
+              },
+              "CharacterName": {
+                "S": "Saint"
+              }
+            }
+          ],
+          "NonKeyAttributes": [
+            "CharacterName",
+            "ClientCode",
+            "ClientId"
+          ],
+          "DataAccess": {
+            "MySql": {}
+          }
+        },
+        {
+          "FacetName": "GameMap",
+          "KeyAttributeAlias": {
+            "PartitionKeyAlias": "GameId",
+            "SortKeyAlias": "MapId"
+          },
+          "TableData": [
+            {
+              "PK": {
+                "S": "#GAME#RoCo"
+              },
+              "SK": {
+                "S": "MAP#Skyfell"
+              },
+              "MapIconURL": {
+                "S": "www.google.com/rogue+company+skyfell"
+              },
+              "MapName": {
+                "S": "Skyfell"
+              }
+            },
+            {
+              "PK": {
+                "S": "#GAME#RoCo"
+              },
+              "SK": {
+                "S": "MAP#Lockdown"
+              },
+              "MapIconURL": {
+                "S": "www.google.com/rogue+company+lockdown"
+              },
+              "MapName": {
+                "S": "Lockdown"
+              }
+            }
+          ],
+          "NonKeyAttributes": [
+            "MapIconURL",
+            "MapName",
+            "ClientCode",
+            "ClientId"
+          ],
+          "DataAccess": {
+            "MySql": {}
+          }
+        }
+      ],
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "InverseKeyIndex",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "SK",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "PK",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "SecondaryIdIndex",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "PK",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "GSI1_SK",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        }
+      ],
+      "DataAccess": {
+        "MySql": {}
+      }
+    }
+  ]
+}
