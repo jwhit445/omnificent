@@ -6,24 +6,20 @@ using DiscordBot.Services;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 
-namespace DiscordBot.Reactions
-{
-    public class RogueCompanyReactions
-    {
-        private readonly RoCoPugService _rocoPugService;
+namespace DiscordBot.Reactions {
+    public class RogueCompanyReactions {
+        private readonly IRoCoPugService _rocoPugService;
         private readonly ChannelSettings _channelSettings;
         private readonly EmoteSettings _emoteSettings;
 
-        public RogueCompanyReactions(RoCoPugService rocoPugService, IOptions<ChannelSettings> channelSettings, IOptions<EmoteSettings> emoteSettings)
-        {
+        public RogueCompanyReactions(IRoCoPugService rocoPugService, IOptions<ChannelSettings> channelSettings, IOptions<EmoteSettings> emoteSettings) {
             _rocoPugService = rocoPugService;
             _channelSettings = channelSettings.Value;
             _emoteSettings = emoteSettings.Value;
         }
 
         public async Task HandleReactionAddedAsync(Cacheable<IUserMessage,
-           ulong> message, SocketTextChannel channel, SocketReaction reaction)
-        {
+           ulong> message, SocketTextChannel channel, SocketReaction reaction) {
             var listQueueChannels = new List<ulong>() {
                 _channelSettings.RoCoEUQueueChannelId,
                 _channelSettings.RoCoNAQueueChannelId,
@@ -33,26 +29,22 @@ namespace DiscordBot.Reactions
                 return;
             }
             var user = channel.GetUser(reaction.UserId);
-            if(user == null) {
+            if (user == null) {
                 return;
             }
             string region = "NA";
             QueueType type = QueueType.NAMain;
-            if(channel.Id == _channelSettings.RoCoNAQueueCPlusUpChannelId)
-            {
+            if (channel.Id == _channelSettings.RoCoNAQueueCPlusUpChannelId) {
                 type = QueueType.NACPlus;
             }
-            else if(channel.Id == _channelSettings.RoCoEUQueueChannelId)
-            {
+            else if (channel.Id == _channelSettings.RoCoEUQueueChannelId) {
                 type = QueueType.EUMain;
                 region = "EU";
             }
-            if (reaction.Emote.Name == _emoteSettings.PlayDuoEmoteName)
-            {
+            if (reaction.Emote.Name == _emoteSettings.PlayDuoEmoteName) {
                 await _rocoPugService.StartDuoQueueAttempt(type, user);
             }
-            else
-            {
+            else {
                 await _rocoPugService.Join(region, user, channel);
             }
         }

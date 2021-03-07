@@ -12,7 +12,7 @@ namespace DiscordBot.Settings
             new Game("Rogue Company", new List<string>()
             {
                 "Favelas",
-                "Icarus",
+                //"Icarus",
                 "Vice",
                 "High Castle",
                 "Lockdown",
@@ -25,7 +25,7 @@ namespace DiscordBot.Settings
             }, new List<string>()
             {
                 "https://static.wikia.nocookie.net/roguecompany/images/a/ae/Favelas.jpeg/revision/latest/scale-to-width-down/310?cb=20200725034307",
-                "https://static.wikia.nocookie.net/roguecompany/images/5/54/Icarus.jpeg/revision/latest/scale-to-width-down/310?cb=20200725031304",
+                //"https://static.wikia.nocookie.net/roguecompany/images/5/54/Icarus.jpeg/revision/latest/scale-to-width-down/310?cb=20200725031304",
                 "https://static.wikia.nocookie.net/roguecompany/images/9/98/Vice_Concept_Art_1.jpeg/revision/latest/scale-to-width-down/310?cb=20200724215431",
                 "https://static.wikia.nocookie.net/roguecompany/images/3/3f/High_Castle_Loading_Screen.jpeg/revision/latest/scale-to-width-down/310?cb=20200812220704",
                 "https://static.wikia.nocookie.net/roguecompany/images/9/99/Lockdown_Loading_Screen.png/revision/latest?cb=20200922162735",

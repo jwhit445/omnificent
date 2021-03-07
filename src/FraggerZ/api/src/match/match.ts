@@ -46,9 +46,9 @@ export function match_to_ddb(id: string, matchNumber: number, data: any): any {
     }
 }
 
-export function match_to_ddb_update_params(id: string, data: any, tableName: string | undefined): any {
+export function match_to_ddb_update_params(id: string, data: any): any {
     return {
-        TableName: tableName || process.env.DYNAMODB_TABLE,
+        TableName: process.env.DYNAMODB_TABLE,
         Key: {
             Id: id,
             EntityType: 'match'
@@ -92,10 +92,10 @@ export function match_to_ddb_update_params(id: string, data: any, tableName: str
     }
 }
 
-export async function get_all_matches_from_ddb(dynamoDb: DynamoDB.DocumentClient, tableName: string | undefined): Promise<any> {
+export async function get_all_matches_from_ddb(dynamoDb: DynamoDB.DocumentClient): Promise<any> {
     try {
         const result = await dynamoDb.query({
-            TableName: tableName || process.env.DYNAMODB_TABLE,
+            TableName: process.env.DYNAMODB_TABLE,
             IndexName: 'EntityTypeMatchNumberIndex',
             KeyConditionExpression: 'EntityType = :hashKey',
             ExpressionAttributeValues: {

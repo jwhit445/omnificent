@@ -12,11 +12,11 @@ namespace DiscordBot.Reactions
         private readonly RoleSettings _roleSettings;
         private readonly ChannelSettings _channelSettings;
         private readonly EmoteSettings _emoteSettings;
-        private readonly UserService _userService;
+        private readonly IUserService _userService;
 
         public RoleAssignmentReactions(IOptions<RoleSettings> roleSettings, 
             IOptions<ChannelSettings> channelSettings, 
-            IOptions<EmoteSettings> emoteSettings, UserService userService)
+            IOptions<EmoteSettings> emoteSettings, IUserService userService)
         {
             _roleSettings = roleSettings.Value;
             _channelSettings = channelSettings.Value;

@@ -10,19 +10,22 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Options;
 using System;
 using DiscordBot.Util;
+using DiscordBot.Caches;
 
 public class TeamsModule : ModuleBase<SocketCommandContext>
 {
-	private readonly EmbedService _embedService;
-	private readonly ChannelSettings _channelSettings;
-	private readonly BotSettings _botSettings;
-	private readonly TeamService _teamService;
-	private readonly MatchService _matchService;
-	private readonly UserService _userService;
+	private IEmbedService _embedService { get; }
+	private ChannelSettings _channelSettings { get; }
+	private BotSettings _botSettings { get; }
 
-	public TeamsModule(UserService userService, EmbedService embedService, 
-		TeamService teamService, IOptions<ChannelSettings> channelSettings,
-		IOptions<BotSettings> botSettings, MatchService matchService)
+	private ITeamService _teamService { get; }
+	private IMatchService _matchService { get; }
+	private IUserService _userService { get; }
+	private IDiscordUserCache _discordUserCache { get; }
+
+	public TeamsModule(IUserService userService, IEmbedService embedService, 
+		ITeamService teamService, IOptions<ChannelSettings> channelSettings,
+		IOptions<BotSettings> botSettings, IMatchService matchService, IDiscordUserCache discordUserCache)
 	{
 		_matchService = matchService;
 		_teamService = teamService;
@@ -30,6 +33,7 @@ public class TeamsModule : ModuleBase<SocketCommandContext>
 		_embedService = embedService;
 		_channelSettings = channelSettings.Value;
 		_botSettings = botSettings.Value;
+		_discordUserCache = discordUserCache;
 	}
 
 
@@ -82,7 +86,10 @@ public class TeamsModule : ModuleBase<SocketCommandContext>
 				await deleteMe.DeleteAfter(10000);
 				return;
 			}
-			
+			foreach(var id in team1.MemberDiscordIds.Union(team2.MemberDiscordIds)) {
+				await _discordUserCache.SetValueAsync(id, Context.Guild.GetUser(id));
+            }
+
 			await _embedService.SendScrimChallenge(team1, team2, channel);
 		}
 	}

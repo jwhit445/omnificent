@@ -9,23 +9,19 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Services
-{
-    public class UserService
-    {
+namespace DiscordBot.Services {
+    public class UserService : IUserService {
         public HttpClient httpClient;
         private readonly APISettings _apiSettings;
         private readonly RoleSettings _roleSettings;
 
-        public UserService(IOptions<APISettings> apiSettings, IOptions<RoleSettings> roleSettings)
-        {
+        public UserService(IOptions<APISettings> apiSettings, IOptions<RoleSettings> roleSettings) {
             _apiSettings = apiSettings.Value;
             httpClient = new HttpClient();
             _roleSettings = roleSettings.Value;
         }
 
-        public string GetTier(double value)
-        {
+        public string GetTier(double value) {
             if (value >= 7000)
                 return "S";
             else if (value >= 5500)
@@ -43,11 +39,10 @@ namespace DiscordBot.Services
             else if (value >= 250) return "D";
             else if (value >= 100) return "D-";
             else if (value >= 0) return "F";
-            else return "derd is best";
+            else return "dev is best";
         }
 
-        public string GetTier(User user)
-        {
+        public string GetTier(User user) {
             if (user.PlacementMatchIds.Count < 10) return "U";
             return GetTier(user.RoCoMMR * 100);
         }
@@ -56,10 +51,8 @@ namespace DiscordBot.Services
         /// Called automatically when a discord user clicks accept rules.
         /// </summary>
         /// <param name="iUser"></param>
-        public async Task Register(IUser user)
-        {
-            if(user == null)
-            {
+        public async Task Register(IUser user) {
+            if (user == null) {
                 return;
             }
             // Ping the API to create a user;
@@ -68,33 +61,30 @@ namespace DiscordBot.Services
             var response = await httpClient.PostAsync(_apiSettings.BaseURL + $"/user", new StringContent(JSON, System.Text.Encoding.UTF8));
         }
 
-        public bool IsUserPremium(SocketGuildUser user)
-        {
-            if(user == null)
-            {
+        public bool IsUserPremium(IGuildUser user) {
+            if (user == null) {
                 return false;
             }
             bool foundRole = false;
-            foreach (SocketRole role in user.Roles)
-            {
-                if (role.Id == _roleSettings.PremiumRoleId) { foundRole = true; break; }
+            foreach (ulong roleId in user.RoleIds) {
+                if (roleId == _roleSettings.PremiumRoleId) { 
+                    foundRole = true; 
+                    break;
+                }
             }
 
             return foundRole;
         }
 
-        public async Task Update(User user)
-        {
+        public async Task Update(User user) {
             var JSON = JsonConvert.SerializeObject(user);
             var response = await httpClient.PutAsync(_apiSettings.BaseURL + $"/user/{user.DiscordId}", new StringContent(JSON, System.Text.Encoding.UTF8));
         }
 
-        public async Task<StatSummary> GetStatSummary(User user)
-        {
+        public async Task<StatSummary> GetStatSummary(User user) {
             var response = await httpClient.GetAsync(_apiSettings.BaseURL + $"/user/{user.Id}/stats");
             StatSummary stats = null;
-            if (response == null || response.StatusCode != System.Net.HttpStatusCode.OK)
-            {
+            if (response == null || response.StatusCode != System.Net.HttpStatusCode.OK) {
                 throw new Exception("Couldn't get StatSummary");
             }
             var jsonString = await response.Content.ReadAsStringAsync();
@@ -103,13 +93,11 @@ namespace DiscordBot.Services
             return stats;
         }
 
-        public async Task<Stats> GetStats(User user)
-        {
+        public async Task<Stats> GetStats(User user) {
             ///user/{id}/stats
             var response = await httpClient.GetAsync(_apiSettings.BaseURL + $"/user/{user.Id}/stats");
             Stats stats = null;
-            if (response != null)
-            {
+            if (response != null) {
                 var jsonString = await response.Content.ReadAsStringAsync();
                 try { stats = JsonConvert.DeserializeObject<Stats>(jsonString); }
                 catch (Exception e) { Console.WriteLine(e.Message); }
@@ -117,12 +105,10 @@ namespace DiscordBot.Services
             return stats;
         }
 
-        public async Task<User> GetById(ulong userId)
-        {
+        public async Task<User> GetById(ulong userId) {
             var response = await httpClient.GetAsync(_apiSettings.BaseURL + $"/user/{userId}");
             User user = null;
-            if (response != null)
-            {
+            if (response != null) {
                 var jsonString = await response.Content.ReadAsStringAsync();
                 try { user = JsonConvert.DeserializeObject<User>(jsonString); }
                 catch (Exception e) { Console.WriteLine(e.Message); }
@@ -130,12 +116,10 @@ namespace DiscordBot.Services
             return user;
         }
 
-        public async Task<List<User>> GetAll()
-        {
+        public async Task<List<User>> GetAll() {
             var response = await httpClient.GetAsync(_apiSettings.BaseURL + $"/user");
             List<User> listUsers = null;
-            if (response != null)
-            {
+            if (response != null) {
                 var jsonString = await response.Content.ReadAsStringAsync();
                 try { listUsers = JsonConvert.DeserializeObject<List<User>>(jsonString); }
                 catch (Exception e) { Console.WriteLine(e.Message); }
@@ -143,12 +127,10 @@ namespace DiscordBot.Services
             return listUsers;
         }
 
-        public async Task<List<User>> GetLeaderboard(string gameName, string region = null)
-        {
+        public async Task<List<User>> GetLeaderboard() {
             var response = await httpClient.GetAsync(_apiSettings.BaseURL + $"/user/leaderboard");
             List<User> listUsers = null;
-            if (response != null)
-            {
+            if (response != null) {
                 var jsonString = await response.Content.ReadAsStringAsync();
                 try { listUsers = JsonConvert.DeserializeObject<List<User>>(jsonString); }
                 catch (Exception e) { Console.WriteLine(e.Message); }

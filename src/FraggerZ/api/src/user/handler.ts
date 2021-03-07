@@ -5,6 +5,9 @@ import { getAllMatchesForUser } from '../match/handler';
 import { get_all_from_ddb, get_user_from_ddb, update_user_from_ddb, User, user_to_ddb, user_to_ddb_update_params } from "./user";
 import { UserStats } from './userStats';
 
+export const INITIAL_MMR: number = 25;
+export const INITIAL_SIGMA: number = 8.333;
+
 const dynamoDb = new DynamoDB.DocumentClient()
 
 export const register: Handler = (event: any, context: Context, callback: any) => {
@@ -18,8 +21,8 @@ export const register: Handler = (event: any, context: Context, callback: any) =
         callback(new Error("Invalid request data"));
         return;
     }
-    data.RoCoMMR = 25;
-    data.RoCoSigma = 8.333;
+    data.RoCoMMR = INITIAL_MMR;
+    data.RoCoSigma = INITIAL_SIGMA;
     const params = {
         TableName: process.env.DYNAMODB_TABLE,
         Item: user_to_ddb(data),
@@ -58,7 +61,7 @@ function validateUser(user: User): boolean {
 export const getOne = async (event: any, context: Context): Promise<any> => {
     try {
         // fetch user from the database by id
-        const result = await get_user_from_ddb(dynamoDb, event.pathParameters.id, undefined);
+        const result = await get_user_from_ddb(dynamoDb, event.pathParameters.id);
         const response = {
             statusCode: 200,
             body: JSON.stringify(result),
@@ -85,7 +88,7 @@ export const update = async (event: any, context: Context): Promise<any> => {
 
     try {
         // write the match changes to the database
-        await update_user_from_ddb(dynamoDb, event.pathParameters.id, data, undefined);
+        await update_user_from_ddb(dynamoDb, event.pathParameters.id, data);
         const response = {
             statusCode: 200,
             body: "User updated successfully"
@@ -99,7 +102,7 @@ export const update = async (event: any, context: Context): Promise<any> => {
 export const getStats = async (event: any, context: Context): Promise<any> => {
     try {
         // fetch user from the database by id
-        const result = await get_user_from_ddb(dynamoDb, event.pathParameters.id, undefined);
+        const result = await get_user_from_ddb(dynamoDb, event.pathParameters.id);
         const userStats: UserStats = new UserStats();
         userStats.Id = result.Id;
         userStats.Wins = 0;
@@ -110,7 +113,7 @@ export const getStats = async (event: any, context: Context): Promise<any> => {
             throw new Error('Error retrieving matches from db');
         }
         for (const matchCur of allMatches.Items) {
-            if(matchCur.MatchNumber < 564) {
+            if(matchCur.MatchNumber < 2089) { // 2088 was the last match in season 2
                 continue;
             }
             if(new Date(matchCur.DateTimeEnded) < new Date(result.DateTimeLastStatReset)) {
@@ -165,7 +168,7 @@ export const getStats = async (event: any, context: Context): Promise<any> => {
 export const getStatsWithMatches = async (event: any, context: Context): Promise<any> => {
     try {
         // fetch user from the database by id
-        const result = await get_user_from_ddb(dynamoDb, event.pathParameters.id, undefined);
+        const result = await get_user_from_ddb(dynamoDb, event.pathParameters.id);
         const userStats: UserStats = new UserStats();
         userStats.Id = result.Id;
         userStats.Wins = 0;
@@ -234,7 +237,7 @@ export const getStatsWithMatches = async (event: any, context: Context): Promise
 
 export const getAll = async (event: any, context: Context): Promise<any> => {
     try {
-        const filteredResults = await get_all_from_ddb(dynamoDb, undefined);
+        const filteredResults = await get_all_from_ddb(dynamoDb);
         const response = {
             statusCode: 200,
             body: JSON.stringify(filteredResults),
@@ -247,7 +250,7 @@ export const getAll = async (event: any, context: Context): Promise<any> => {
 
 export const getAllUsersByTopMmr = async (): Promise<any> => {
     try {
-        const filteredResults = await get_all_from_ddb(dynamoDb, undefined);
+        const filteredResults = await get_all_from_ddb(dynamoDb);
         filteredResults.sort((a: any, b: any) => (a.RoCoMMR > b.RoCoMMR) ? -1 : 1);
         return filteredResults;
     } catch (error) {
@@ -267,7 +270,7 @@ export const getLeaderboard = async (event: any, context: Context): Promise<any>
         return {
           statusCode: error.statusCode || 501,
           headers: { 'Content-Type': 'text/plain' },
-          body: 'Couldn\'t fetch users for the leaderboard',
+          body: 'Couldn\'t fetch users for the leaderboard: \n' + error,
         };
     }
 };

@@ -1,4 +1,5 @@
 import { DynamoDB } from 'aws-sdk'
+import { ExpressionAttributeValueMap, ItemList, QueryInput } from 'aws-sdk/clients/dynamodb';
 
 export class User {
     Id: string;
@@ -19,9 +20,9 @@ export class User {
     DateTimeLastStatReset: Date;
 }
 
-export async function get_user_from_ddb(dynamoDb: DynamoDB.DocumentClient, id: string, tableName: string | undefined): Promise<any> {
+export async function get_user_from_ddb(dynamoDb: DynamoDB.DocumentClient, id: string): Promise<any> {
     const params = {
-        TableName: tableName || process.env.DYNAMODB_TABLE,
+        TableName: process.env.DYNAMODB_TABLE,
         Key: {
           Id: id,
           EntityType: 'user'
@@ -32,8 +33,8 @@ export async function get_user_from_ddb(dynamoDb: DynamoDB.DocumentClient, id: s
     return result.Item;
 }
 
-export async function update_user_from_ddb(dynamoDb: DynamoDB.DocumentClient, id: string, user: User, tableName: string | undefined): Promise<any> {
-    const params = user_to_ddb_update_params(id, user, tableName);
+export async function update_user_from_ddb(dynamoDb: DynamoDB.DocumentClient, id: string, user: User): Promise<any> {
+    const params = user_to_ddb_update_params(id, user);
     try {
         // write the match changes to the database
         return await dynamoDb.update(params).promise();
@@ -42,24 +43,59 @@ export async function update_user_from_ddb(dynamoDb: DynamoDB.DocumentClient, id
     }
 };
 
-export async function get_all_from_ddb(dynamoDb: DynamoDB.DocumentClient, tableName: string | undefined): Promise<any> {
-    const params = {
-        TableName: tableName || process.env.DYNAMODB_TABLE,
-        FilterExpression: 'EntityType = :et',
-        ExpressionAttributeValues: {
-            ':et': 'user'
-        }
-    };
+export async function get_all_from_ddb(dynamoDb: DynamoDB.DocumentClient): Promise<any> {
     try {
-        const result = await dynamoDb.scan(params).promise();
-        if(result.Count && result.Items) {
-            return result.Items;
+        const params: any = {
+            TableName: process.env.DYNAMODB_TABLE,
+            IndexName: 'InverseKey',
+            KeyConditionExpression: 'EntityType = :hashKey',
+            ExpressionAttributeValues: {
+                ':hashKey': 'user',
+            },
+            ExclusiveStartKey: undefined,
+        };
+        const retVal: any[] = [];
+        do {
+            const result = await dynamoDb.query(params).promise();
+            if(result.Items) {
+                retVal.push(...result.Items);
+            }
+            params.ExclusiveStartKey = result.LastEvaluatedKey;
         }
-        else {
-            throw new Error('No user results found in db');
-        }
+        while((params.ExclusiveStartKey !== undefined && params.ExclusiveStartKey !== null));
+        return retVal;
     } catch (error) {
         throw new Error('Couldn\'t fetch all users: '+error);
+    }
+};
+
+export async function get_all_non_reset_from_ddb(dynamoDb: DynamoDB.DocumentClient, newMMR: number, newSigma: number): Promise<any> {
+    try {
+        const params: any = {
+            TableName: process.env.DYNAMODB_TABLE,
+            IndexName: 'InverseKey',
+            KeyConditionExpression: 'EntityType = :hashKey',
+            FilterExpression: "RoCoMMR <> :mmr AND RoCoSigma <> :sigma AND size(PlacementMatchIds) > :zero",
+            ExpressionAttributeValues: {
+                ':hashKey': 'user',
+                ':mmr': newMMR.toString(),
+                ':sigma': newSigma.toString(),
+                ':zero': 0,
+            },
+            ExclusiveStartKey: undefined,
+        };
+        const retVal: any[] = [];
+        do {
+            const result = await dynamoDb.query(params).promise();
+            if(result.Items) {
+                retVal.push(...result.Items);
+            }
+            params.ExclusiveStartKey = result.LastEvaluatedKey;
+        }
+        while((params.ExclusiveStartKey !== undefined && params.ExclusiveStartKey !== null));
+        return retVal;
+    } catch (error) {
+        throw new Error('Couldn\'t fetch all non-reset users: '+error);
     }
 };
 
@@ -85,9 +121,9 @@ export function user_to_ddb(data: any): any {
     }
 }
 
-export function user_to_ddb_update_params(id: string, data: any, tableName: string | undefined): any {
+export function user_to_ddb_update_params(id: string, data: any): any {
     return {
-        TableName: tableName || process.env.DYNAMODB_TABLE,
+        TableName: process.env.DYNAMODB_TABLE,
         Key: {
             Id: id,
             EntityType: 'user'

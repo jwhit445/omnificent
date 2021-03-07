@@ -10,15 +10,15 @@ namespace DiscordBot.Reactions
 {
     public class TeamReactions
     {
-        private readonly MatchService _matchService;
+        private readonly IMatchService _matchService;
         private readonly ChannelSettings _channelSettings;
         private readonly EmoteSettings _emoteSettings;
-        private readonly TeamService _teamService;
-        private readonly UserService _userService;
+        private readonly ITeamService _teamService;
+        private readonly IUserService _userService;
 
         public TeamReactions(IOptions<ChannelSettings> channelSettings, 
-            IOptions<EmoteSettings> emoteSettings, MatchService matchService,
-            TeamService teamService, UserService userService)
+            IOptions<EmoteSettings> emoteSettings, IMatchService matchService,
+            ITeamService teamService, IUserService userService)
         {
             _matchService = matchService;
             _userService = userService;

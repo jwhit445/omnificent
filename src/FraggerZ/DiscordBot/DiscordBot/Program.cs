@@ -1,5 +1,7 @@
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot.Caches;
 using DiscordBot.Reactions;
 using DiscordBot.Services;
 using DiscordBot.Settings;
@@ -31,18 +33,23 @@ namespace DiscordBot
                         .Configure<BotSettings>(config.GetSection(nameof(BotSettings)));
 
                     services
-                        .AddSingleton<EmbedService>()
-                        .AddSingleton<MatchService>()
-                        .AddSingleton<UserService>()
-                        .AddSingleton<TeamService>()
+                        .AddSingleton<IEmbedService, EmbedService>()
+                        .AddSingleton<IMatchService, MatchService>()
+                        .AddSingleton<IUserService, UserService>()
+                        .AddSingleton<ITeamService, TeamService>()
+                        .AddSingleton<IRoCoPugService, RoCoPugService>()
                         .AddSingleton<DiscordSocketClient>()
                         .AddSingleton<BaseSocketClient, DiscordSocketClient>(sp =>
                         {
                             return sp.GetRequiredService<DiscordSocketClient>();
                         })
+                        .AddSingleton<IDiscordClient, DiscordSocketClient>(sp => {
+                            return sp.GetRequiredService<DiscordSocketClient>();
+                        })
+                        .AddSingleton<IChannelCache, ChannelCache>()
+                        .AddSingleton<IDiscordUserCache, DiscordUserCache>()
                         .AddSingleton<LoggingService>()
                         .AddSingleton<CommandHandler>()
-                        .AddSingleton<RoCoPugService>()
                         .AddSingleton<RogueCompanyReactions>()
                         .AddSingleton<RoleAssignmentReactions>()
                         .AddSingleton<ReportReactions>()

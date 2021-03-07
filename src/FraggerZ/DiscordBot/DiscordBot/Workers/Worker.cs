@@ -1,6 +1,7 @@
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot.Caches;
 using DiscordBot.Reactions;
 using DiscordBot.Services;
 using DiscordBot.Settings;
@@ -29,14 +30,15 @@ namespace DiscordBot.Workers
         private readonly TeamReactions _teamReactions;
         private readonly ReportReactions _reportReactions;
         private readonly MatchReactions _matchReactions;
-        private readonly UserService _userService;
+        private readonly IDiscordUserCache _discordUserCache;
+        private readonly IUserService _userService;
 
 
         public Worker(IOptions<RoleSettings> roleSettings, IOptions<BotSettings> botSettings,
             IOptions<ChannelSettings> channelSettings, BaseSocketClient client, CommandHandler commandHandler
             , RoleAssignmentReactions roleAssignmentReactions, RogueCompanyReactions rogueCompanyReactions,
             IOptions<EmoteSettings> emoteSettings, TeamReactions teamReactions, ReportReactions reportReactions,
-            UserService userService, MatchReactions matchReactions)
+            IUserService userService, MatchReactions matchReactions, IDiscordUserCache discordUserCache)
         {
             _roleSettings = roleSettings.Value;
             _botSettings = botSettings.Value;
@@ -50,13 +52,14 @@ namespace DiscordBot.Workers
             _commandHandler = commandHandler;
             _userService = userService;
             _matchReactions = matchReactions;
+            _discordUserCache = discordUserCache;
         }
 
         public override async Task StartAsync(CancellationToken cancellationToken) {
-            //_client.ReactionAdded += async (m, c, r) => HandleReactionAddedAsync(m, c, r);
-            //_client.ReactionRemoved += async (m, c, r) => HandleReactionRemovedAsync(m, c, r);
-            _client.ReactionAdded += HandleReactionAddedAsync;
-            _client.ReactionRemoved += HandleReactionRemovedAsync;
+            _client.ReactionAdded += async (m, c, r) => HandleReactionAddedAsync(m, c, r);
+            _client.ReactionRemoved += async (m, c, r) => HandleReactionRemovedAsync(m, c, r);
+            //_client.ReactionAdded += HandleReactionAddedAsync;
+            //_client.ReactionRemoved += HandleReactionRemovedAsync;
             _client.UserJoined += HandleUserJoinedAsync;
 
             await _client.LoginAsync(TokenType.Bot, _botSettings.Token);
@@ -85,9 +88,11 @@ namespace DiscordBot.Workers
 
         private async Task HandleReactionAddedAsync(Cacheable<IUserMessage, ulong> message, ISocketMessageChannel channel, SocketReaction reaction)
         {
+            
             if (reaction.UserId == _botSettings.Id) return;
+            await _discordUserCache.SetValueAsync(reaction.UserId, reaction.User.Value);
 
-            if(channel is SocketDMChannel dmChannel)
+            if (channel is SocketDMChannel dmChannel)
             {
                 await _matchReactions.HandleDMReactionAddedAsync(message, dmChannel, reaction);
             }
@@ -161,14 +166,14 @@ namespace DiscordBot.Workers
         private readonly CommandService _commands;
         private readonly LoggingService _logging;
         private readonly IServiceProvider _sp;
-        private readonly UserService _userService;
+        private readonly IUserService _userService;
         private readonly ChannelSettings _channelSettings;
         private readonly EmoteSettings _emoteSettings;
-        private readonly RoCoPugService _rocoService;
+        private readonly IRoCoPugService _rocoService;
 
         public CommandHandler(IOptions<BotSettings> botSettings, 
             IServiceProvider sp, DiscordSocketClient client, 
-            CommandService commandService, LoggingService loggingService, UserService userService, RoCoPugService rocoService
+            CommandService commandService, LoggingService loggingService, IUserService userService, IRoCoPugService rocoService
             , IOptions<ChannelSettings> channelSettings, IOptions<EmoteSettings> emoteSettings)
         {
             _botSettings = botSettings.Value;
@@ -194,7 +199,7 @@ namespace DiscordBot.Workers
             //Get Register channel
             try
             {
-                _rocoService.Init(_client);
+                await _rocoService.Init(_client);
                 var channel = _client.GetChannel(_channelSettings.RegisterChannelId);
                 if (channel is SocketTextChannel socketTextChannel)
                 {

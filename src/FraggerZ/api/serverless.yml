@@ -28,6 +28,12 @@ provider:
     shouldStartNameWithService: true
 
 functions:
+  migrateTableToNewSchema:
+    handler: dist/admin/handler.migrateTableStream
+  addMigrateAttribute:
+    handler: dist/admin/handler.addMigrateAttribute
+
+
   adminResetAllMmr:
     handler: dist/admin/handler.resetAllMmr
     events:
@@ -185,41 +191,16 @@ resources:
       DeletionPolicy: Retain
       Properties:
         AttributeDefinitions:
-          - AttributeName: Id
+          - AttributeName: PK
             AttributeType: S
-          - AttributeName: EntityType
+          - AttributeName: SK
             AttributeType: S
-          - AttributeName: MatchNumber
-            AttributeType: N
         KeySchema:
-          - AttributeName: Id
+          - AttributeName: PK
             KeyType: HASH
-          - AttributeName: EntityType
+          - AttributeName: SK
             KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        GlobalSecondaryIndexes:
-          - IndexName: EntityTypeIndex
-            KeySchema:
-              - AttributeName: Id
-                KeyType: HASH
-              - AttributeName: EntityType
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
-          - IndexName: EntityTypeMatchNumberIndex
-            KeySchema:
-              - AttributeName: EntityType
-                KeyType: HASH
-              - AttributeName: MatchNumber
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
         TableName: ${self:provider.environment.DYNAMODB_TABLE}

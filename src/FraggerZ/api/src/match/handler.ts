@@ -4,6 +4,7 @@ import { rate, Rating, quality } from 'ts-trueskill';
 import { get_all_matches_from_ddb, Match, MatchStatus, match_to_ddb, match_to_ddb_update_params } from './match';
 import { v4 } from 'uuid';
 import { get_user_from_ddb, update_user_from_ddb, User, user_to_ddb_update_params } from '../user/user';
+import { INITIAL_SIGMA } from '../user/handler';
 
 const dynamoDb = new DynamoDB.DocumentClient();
 
@@ -99,7 +100,7 @@ export const update = (event: any, context: Context, callback: any): Handler => 
         return;
     }
 
-    const params = match_to_ddb_update_params(event.pathParameters.id, data, undefined);
+    const params = match_to_ddb_update_params(event.pathParameters.id, data);
 
     // write the match changes to the database
     dynamoDb.update(params, (error, result) => {
@@ -135,7 +136,7 @@ export const report = async (event: any, context: Context): Promise<any> => {
         throw new Error("This match was cancelled!");
     }
     try {
-        await reportMatch(match, event.pathParameters.id, undefined);
+        await reportMatch(match, event.pathParameters.id);
         const response = {
             statusCode: 200,
             body: "Match reported successfully"
@@ -150,7 +151,7 @@ export const report = async (event: any, context: Context): Promise<any> => {
     }
 }
 
-export const reportMatch = async (match: Match, id: string, tableName: string): Promise<any> => {
+export const reportMatch = async (match: Match, id: string): Promise<any> => {
     match.MatchStatus = MatchStatus.Reported;
     // Get all users and their current mmr
     const team1Users: User[] = [];
@@ -161,12 +162,12 @@ export const reportMatch = async (match: Match, id: string, tableName: string): 
     // 3. All of the opposing team's
     for (const userId of match.Team1Ids) {
         // Get the user from their id
-        const userCur: User = await get_user_from_ddb(dynamoDb, userId, tableName);
+        const userCur: User = await get_user_from_ddb(dynamoDb, userId);
         team1Users.push(userCur);
     }
     for (const userId of match.Team2Ids) {
         // Get the user from their id
-        const userCur: User = await get_user_from_ddb(dynamoDb, userId, tableName);
+        const userCur: User = await get_user_from_ddb(dynamoDb, userId);
         team2Users.push(userCur);
     }
     if(match.WinningTeam === 1) {
@@ -180,7 +181,7 @@ export const reportMatch = async (match: Match, id: string, tableName: string): 
     else {
         throw new Error('Invalid winning team.');
     }
-    const params = match_to_ddb_update_params(id, match, tableName);
+    const params = match_to_ddb_update_params(id, match);
     // write the match changes to the database
     await dynamoDb.update(params).promise();
 }
@@ -193,7 +194,7 @@ const updateTeamUsers = async (match: Match, updatedTeam1: User[], updatedTeam2:
         if(userCur.PlacementMatchIds.length < 10) {
             userCur.PlacementMatchIds.push(match.Id);
         }
-        await update_user_from_ddb(dynamoDb, userCur.Id, userCur, undefined);
+        await update_user_from_ddb(dynamoDb, userCur.Id, userCur);
     }
     for (const userCur of updatedTeam2) {
         if(userCur.PlacementMatchIds === undefined || userCur.PlacementMatchIds === null) {
@@ -202,7 +203,7 @@ const updateTeamUsers = async (match: Match, updatedTeam1: User[], updatedTeam2:
         if(userCur.PlacementMatchIds.length < 10) {
             userCur.PlacementMatchIds.push(match.Id);
         }
-        await update_user_from_ddb(dynamoDb, userCur.Id, userCur, undefined);
+        await update_user_from_ddb(dynamoDb, userCur.Id, userCur);
     }
 }
 
@@ -219,12 +220,48 @@ export const calculatePoints = (team1Users: User[], team2Users: User[]): User[][
     // Assumes the first team was the winner by default
     const [rated1, rated2] = rate([team1, team2]); // rate also takes weights of winners or draw
     for (let i = 0; i < rated1.length; i++) {
-        team1Users[i].RoCoMMR = rated1[i].mu;
-        team1Users[i].RoCoSigma = rated1[i].sigma;
+        const userCur: User = team1Users[i];
+        let newMu: number = rated1[i].mu;
+        const newSigma: number = rated1[i].sigma;
+        const didWin: boolean = userCur.RoCoMMR < newMu;
+        const mmrDifference: number = Math.abs(userCur.RoCoMMR - newMu);
+        if(userCur.PlacementMatchIds && userCur.PlacementMatchIds.length < 10) {
+            if(didWin) {
+                newMu += mmrDifference * .20;
+            }
+            else {
+                newMu -= mmrDifference * .20;
+            }
+        }
+        if(!didWin) {
+            // if in placements, this yields a loss of 10% less than calculated instead of 20%.
+            // if not in placements, yield a loss of 10% less than calculated.
+            newMu += mmrDifference * .10;
+        }
+        userCur.RoCoMMR = newMu;
+        userCur.RoCoSigma = Math.max(newSigma, INITIAL_SIGMA * .30);
     }
     for (let i = 0; i < rated2.length; i++) {
-        team2Users[i].RoCoMMR = rated2[i].mu;
-        team2Users[i].RoCoSigma = rated2[i].sigma;
+        const userCur: User = team2Users[i];
+        let newMu: number = rated2[i].mu;
+        const newSigma: number = rated2[i].sigma;
+        const didWin: boolean = userCur.RoCoMMR < newMu;
+        const mmrDifference: number = Math.abs(userCur.RoCoMMR - newMu);
+        if(userCur.PlacementMatchIds && userCur.PlacementMatchIds.length < 10) {
+            if(didWin) {
+                newMu += mmrDifference * .20;
+            }
+            else {
+                newMu -= mmrDifference * .20;
+            }
+        }
+        if(!didWin) {
+            // if in placements, this yields a loss of 10% less than calculated instead of 20%.
+            // if not in placements, yield a loss of 10% less than calculated.
+            newMu += mmrDifference * .10;
+        }
+        userCur.RoCoMMR = newMu;
+        userCur.RoCoSigma = Math.max(newSigma, INITIAL_SIGMA * .30);
     }
     return [team1Users, team2Users];
 }
@@ -294,7 +331,7 @@ export const getByMatchNum = async (event: any, context: Context): Promise<any> 
 
 export const getAll = async (event: any, context: Context): Promise<any> => {
     try {
-        const filteredResults = await get_all_matches_from_ddb(dynamoDb, undefined);
+        const filteredResults = await get_all_matches_from_ddb(dynamoDb);
         const response = {
             statusCode: 200,
             body: JSON.stringify(filteredResults),
