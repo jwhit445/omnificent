@@ -1,4 +1,5 @@
 export class User {
-    EpicID: string;
+    Id: string;
     Username: string;
+    PlatformCode: string;
 }

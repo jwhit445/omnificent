@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core.Omni", "Core.MVVM\Core
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Omni.Bot", "Omni.Bot\Omni.Bot.csproj", "{02FB7012-4F4A-4F27-B781-07DF4527A3F5}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OmniAntiCheatInstaller", "OmniAntiCheatInstaller\OmniAntiCheatInstaller.vdproj", "{56B28CA4-5370-4073-BA0E-068197571154}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,12 @@ Global
 		{02FB7012-4F4A-4F27-B781-07DF4527A3F5}.Release|x64.Build.0 = Release|Any CPU
 		{02FB7012-4F4A-4F27-B781-07DF4527A3F5}.Release|x86.ActiveCfg = Release|Any CPU
 		{02FB7012-4F4A-4F27-B781-07DF4527A3F5}.Release|x86.Build.0 = Release|Any CPU
+		{56B28CA4-5370-4073-BA0E-068197571154}.Debug|Any CPU.ActiveCfg = Debug
+		{56B28CA4-5370-4073-BA0E-068197571154}.Debug|x64.ActiveCfg = Debug
+		{56B28CA4-5370-4073-BA0E-068197571154}.Debug|x86.ActiveCfg = Debug
+		{56B28CA4-5370-4073-BA0E-068197571154}.Release|Any CPU.ActiveCfg = Release
+		{56B28CA4-5370-4073-BA0E-068197571154}.Release|x64.ActiveCfg = Release
+		{56B28CA4-5370-4073-BA0E-068197571154}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

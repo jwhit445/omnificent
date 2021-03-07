@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Amazon;
@@ -59,6 +60,16 @@ namespace OmniAntiCheat.Windows {
 			set { SetBindableProperty(() => EpicUsername, value); }
 		}
 
+		public PlatformCode PlatformCode {
+			get { return GetBindableProperty(() => PlatformCode, PlatformCode.Unknown); }
+			set { SetBindableProperty(() => PlatformCode, value); }
+		}
+
+		public GameType GameType {
+			get { return GetBindableProperty(() => GameType, GameType.Unknown); }
+			set { SetBindableProperty(() => GameType, value); }
+		}
+
 		public bool IsLoggingIn {
 			get { return GetBindableProperty(() => IsLoggingIn, true); }
 			set { SetBindableProperty(() => IsLoggingIn, value); }
@@ -76,6 +87,18 @@ namespace OmniAntiCheat.Windows {
 			}
 		}
 
+		public bool HasDisallowedSettings {
+			get {
+				return !string.IsNullOrWhiteSpace(DisallowedSettingsMessage);
+			}
+		}
+
+		[BindableProperty(nameof(HasDisallowedSettings), nameof(CanStartGame))]
+		public string DisallowedSettingsMessage {
+			get { return GetBindableProperty(() => DisallowedSettingsMessage); }
+			set { SetBindableProperty(() => DisallowedSettingsMessage, value); }
+		}
+
 		[BindableProperty(nameof(CanStartGame))]
 		public string MossStatus {
 			get { return GetBindableProperty(() => MossStatus, NA_STRING); }
@@ -90,23 +113,35 @@ namespace OmniAntiCheat.Windows {
 
 		public bool CanStartGame {
 			get {
-				return MossStatus == NA_STRING && GameStatus == NA_STRING && !IsUploadingToS3;
+				return MossStatus == NA_STRING 
+					&& GameStatus == NA_STRING 
+					&& !IsUploadingToS3 
+					&& !HasDisallowedSettings 
+					&& string.IsNullOrWhiteSpace(DisallowedSettingsMessage);
 			}
 		}
 
 		public MainWindowVM(IOmniAPI omniAPI) {
 			Inst = this;
 			_omniAPI = omniAPI;
-			CheckForMossInstallation();
-			if(!TryGetScrapedEpicInfo(out string errorMessage)) {
-				MessageBox.Show($"Unable to find Epic user information.\r\nError: {errorMessage}");
+            if(!IsMossInstalled(out string errorMessage)
+                || !IsLatestOmniAntiCheatVersion(out errorMessage)
+                || !IsLatestMossVersion(out errorMessage))
+			{
+                MessageBox.Show($"Unable to start Omni Anti Cheat: \r\nError: { errorMessage }");
+                Application.Current.Shutdown();
+                return;
+            }
+            if(!TryGetScrapedEpicInfo(out errorMessage)) {
+				MessageBox.Show($"Unable to find Epic user information.\r\nError: { errorMessage }");
 				Environment.Exit(0);
 				return;
 			}
-			TaskUtils.FireAndForget(StartPollForGameEvents());
-			TaskUtils.FireAndForget(Login());
-			
-		}
+			CheckDisallowedSettings();
+            TaskUtils.FireAndForget(StartPollForGameEvents());
+            TaskUtils.FireAndForget(Login());
+
+        }
 
 		///<summary>Starts Moss and the game client.</summary>
 		public IAsyncCommand StartGameCommand => GetCommandAsync(() => StartGameCommand, true, async () => {
@@ -177,37 +212,47 @@ namespace OmniAntiCheat.Windows {
 
 		private bool TryGetScrapedEpicInfo(out string errorMessage) {
 			string appDataPath = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)).FullName;
-			string logsFolder = Path.Combine(appDataPath, @"Local\RogueCompany\Saved\Logs");
+			string logsFolder = Path.Combine(appDataPath, @"Local\EpicGamesLauncher\Saved\Logs");
 			if(!Directory.Exists(logsFolder)) {
 				errorMessage = "Unable to find log folder.";
 				return false;
 			}
 			List<string> listFiles = Directory
 				.GetFiles(logsFolder)
-				.OrderByDescending(x => File.GetLastWriteTime(x))
+				.OrderByDescending(x => File.GetLastAccessTime(x))
 				.ToList();
 			foreach(string filePath in listFiles) {
-				string fileContents = File.ReadAllText(filePath);
-				Match match = Regex.Match(fileContents, @".*-epicusername=(.*) -epicuserid=([^\s]*)");
-				if(match != null && match.Success) {
-					EpicUsername = match.Groups[1].Value;
-					EpicID = match.Groups[2].Value;
-					_omniAPI.EpicID = EpicID;
-					errorMessage = "";
+                using FileStream logFileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using StreamReader logFileReader = new StreamReader(logFileStream);
+                string fileContents = logFileReader.ReadToEnd();
+                MatchCollection matches = Regex.Matches(fileContents, @".*-epicusername=(.*) -epicuserid=([^\s]*)");
+                if (matches != null && matches.Count > 0) {
+                    Match match = matches[matches.Count - 1];
+                    EpicUsername = match.Groups[1].Value.Trim('\"');
+                    EpicID = match.Groups[2].Value;
+                    _omniAPI.EpicID = EpicID;
+                    errorMessage = "";
+					PlatformCode = PlatformCode.Epic;
+					_omniAPI.PlatformCode = PlatformCode.Epic;
+					GameType = GameType.RogueCompany;
 					return true;
-				}
-			}
+                }
+            }
 			errorMessage = "Unable to find ID in logs.";
 			return true;
 		}
 
 		///<summary>Login with Omni API.</summary>
 		private async Task Login() {
+			if(PlatformCode == PlatformCode.Unknown) {
+				throw new Exception("UNKNOWN PLATFORM CODE.");
+            }
 			try {
 				UpsertUserResponse response = await _omniAPI.UpsertUser(new UpsertUserRequest {
 					User = new User {
-						EpicID = EpicID,
+						ID = EpicID,
 						Username = EpicUsername,
+						PlatformCode = PlatformCode,
 					},
 				});
 				_omniAPI.AuthToken = response.AuthorizationToken;
@@ -299,7 +344,8 @@ namespace OmniAntiCheat.Windows {
 					await ExUtils.SwallowAnyExceptionAsync(async () => {
 						await _omniAPI.UploadUserInfo(new UploadUserInfoRequest {
 							IsMossRunning = isMossRunning,
-							IsRogueCompanyRunning = isGameRunning,
+							IsGameRunning = isGameRunning,
+							GameType = GameType,
 						});
 						_lastHeartbeatSent = timeNow;
 						_previousIsMossRunning = isMossRunning;
@@ -332,12 +378,43 @@ namespace OmniAntiCheat.Windows {
 		}
 
 		///<summary>Checks to ensure that moss is installed.</summary>
-		private void CheckForMossInstallation() {
+		private bool IsMossInstalled(out string errorMsg) {
+			errorMsg = "";
 			_mossLocation = RegistryUtils.GetCurrentUserRegistryValue(MOSS_REGISTRY_PATH, MOSS_EXE_VALUE)?.Trim()?.Trim('\0');
 			if(string.IsNullOrEmpty(_mossLocation) || !File.Exists(_mossLocation)) {
-				MessageBox.Show("Moss is not installed. Please install and open Moss, and restart this program.");
-				Application.Current.Shutdown();
+				errorMsg = "Moss is not installed. Please install and open Moss, and restart this program.";
+				return false;
 			}
+			return true;
+		}
+
+		///<summary>Checks to ensure that Moss is the latest version.</summary>
+		private bool IsLatestMossVersion(out string errorMsg) {
+			errorMsg = "";
+			//TODO: implement
+			return true;
+		}
+
+		///<summary>Checks to ensure that Omni Anti Cheat is the latest version.</summary>
+		private bool IsLatestOmniAntiCheatVersion(out string errorMsg) {
+			errorMsg = "";
+			GetLatestAntiCheatVersionResult result = null;
+			Task.Run(async () => {
+				 result = await _omniAPI.GetLatestAntiCheatVersion();
+			}).GetAwaiter().GetResult();
+			if(System.Reflection.Assembly.GetExecutingAssembly().GetName().Version == result.Version) {
+				return true;
+            }
+			errorMsg = "Your Omnificient Anti Cheat is not on the latest version. Please update and try again.";
+			return false;
+		}
+
+		///<summary>Checks to ensure that Omni Anti Cheat is the latest version.</summary>
+		private void CheckDisallowedSettings() {
+			//TODO: implement
+			string appDataPath = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)).FullName;
+			string configFolder = Path.Combine(appDataPath, @"Local\RogueCompany\Saved\Config\WindowsNoEditor");
+			//DisallowedSettingsMessage = $"Disallowed settings found:\r\nIn {configFolder}: \r\n\r\nIS_CHEATING=1. Expected: 0.";
 		}
 
 	}

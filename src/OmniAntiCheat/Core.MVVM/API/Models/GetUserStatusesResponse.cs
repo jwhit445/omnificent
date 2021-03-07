@@ -18,8 +18,21 @@ namespace Core.Omni.API.Models {
 		///<summary>Indicates if moss anti-cheat is running.</summary>
 		public bool IsMossRunning { get; set; }
 
-		///<summary>Indicates if the rougue company process is running.</summary>
-		public bool IsRogueCompanyRunning { get; set; }
+		///<summary>Indicates if a tracked game process is running.</summary>
+		public bool IsGameRunning { get; set; }
 
+		///<summary>Indicates which game is running.</summary>
+		public GameType GameType { get; set; }
+
+		///<summary>Indicates if the status of the user in regards to the anti cheat.</summary>
+		public ReportStatus ReportStatus { get; set; }
+
+	}
+
+public enum ReportStatus {
+		NotReported,
+		Pending,
+		Cleared,
+		Confirmed,
 	}
 }

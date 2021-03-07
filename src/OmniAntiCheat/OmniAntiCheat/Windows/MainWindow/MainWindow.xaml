@@ -9,7 +9,7 @@
 	mc:Ignorable="d"
     Title="MainWindow" 
     Height="300"
-	Width="450">
+	Width="650">
 	<Window.Resources>
 		<ResourceDictionary>
 			<converters:IsHiddenConverter x:Key="IsHiddenConverter" />
@@ -64,15 +64,20 @@
 					Grid.Row="1"
 					Grid.Column="1"
 					Text="{Binding GameStatus}" />
-			</Grid>
-			<TextBlock
+            </Grid> 
+            <TextBlock
+                Visibility="{Binding IsUploadingToS3, Converter={StaticResource IsVisibleConverter}}"
 				Margin="0,0,0,10"
 				Text="{Binding UploadStatusMessage}" />
-			<Button
+            <TextBlock
+                Visibility="{Binding HasDisallowedSettings, Converter={StaticResource IsVisibleConverter}}"
+				Margin="0,0,0,10"
+				Text="{Binding DisallowedSettingsMessage}" />
+            <Button
 				IsEnabled="{Binding CanStartGame}"
 				Command="{Binding StartGameCommand}">
-				Start Game
-			</Button>
-		</StackPanel>
+                Start Game
+            </Button>
+        </StackPanel>
 	</StackPanel>
 </Window>

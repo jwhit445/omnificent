@@ -34,6 +34,14 @@ provider:
     shouldStartNameWithService: true
 
 functions:
+  anticheatGetVersion:
+    handler: dist/anticheat/handler.getVersion
+    events:
+      - http:
+          path: anticheat/version
+          method: get
+
+
   userUpsert:
     handler: dist/user/handler.upsert
     events:
@@ -52,14 +60,26 @@ functions:
       - http:
           path: user/statuses
           method: post
-
-
-  logeventGetS3Url:
-    handler: dist/logevent/handler.getS3Url
+  userReport:
+    handler: dist/user/handler.report
     events:
       - http:
-          path: logevent/url
+          path: user/report
+          method: post
+  userGetStatus:
+    handler: dist/user/handler.getStatus
+    events:
+      - http:
+          path: user/status
           method: get
+
+
+  logeventCreate:
+    handler: dist/logevent/handler.create
+    events:
+      - http:
+          path: logevent
+          method: post
   logeventGetMany:
     handler: dist/logevent/handler.getMany
     events:

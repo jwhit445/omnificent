@@ -1,5 +1,5 @@
-export class User {
+export class UserStatus {
     LastHeartbeat: Date;
     IsMossRunning: boolean;
-    IsRogueCompanyRunning: boolean;
+    IsGameRunning: boolean;
 }

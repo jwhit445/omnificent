@@ -17,9 +17,18 @@ namespace Core.Omni.API {
 		public string AuthToken { get; set; }
 
 		public string EpicID { get; set; }
+		public PlatformCode PlatformCode { get; set; }
 
 		public async Task<UpsertUserResponse> UpsertUser(UpsertUserRequest request) {
 			return await RunApiCall<UpsertUserResponse, UpsertUserRequest>($"{API_BASE_URL}user", HttpMethod.PUT, request);
+		}
+
+		public async Task ReportUser(ReportUserRequest request) {
+			await RunApiCall<string, ReportUserRequest>($"{API_BASE_URL}user/report", HttpMethod.POST, request);
+		}
+
+		public async Task<GetLatestAntiCheatVersionResult> GetLatestAntiCheatVersion() {
+			return await RunApiCall<GetLatestAntiCheatVersionResult, string>($"{API_BASE_URL}anticheat/version", HttpMethod.GET);
 		}
 
 		public async Task UploadUserInfo(UploadUserInfoRequest request) {
@@ -39,7 +48,7 @@ namespace Core.Omni.API {
 		}
 
 		private async Task<T> RunApiCall<T, R>(string url, HttpMethod method, R body = null) where R: class {
-			_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{EpicID}:{AuthToken}")));
+			_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{PlatformCode}-{EpicID}:{AuthToken}")));
 			HttpResponseMessage responseMessage = null;
 			StringContent content = body != null ? new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json") : null;
 			switch(method) {
@@ -69,7 +78,7 @@ namespace Core.Omni.API {
 			return JsonConvert.DeserializeObject<T>(bodyResponse);
 		}
 
-		private enum HttpMethod {
+        private enum HttpMethod {
 			GET,
 			POST,
 			PUT,

@@ -12,6 +12,7 @@ using UserStatus = Core.Omni.API.Models.UserStatus;
 namespace Omni.Bot.Modules {
 	public class LogModule : ModuleBase<SocketCommandContext> {
 
+		private const string REPORT_COMMAND = "report";
 		private const string PING_COMMAND = "ping";
 		private const string LOGS_COMMAND = "logs";
 		private const string STATUS_COMMAND = "status";
@@ -26,6 +27,12 @@ namespace Omni.Bot.Modules {
 		[Summary("Checks whether the bot is working or not.")]
 		public async Task Ping() {
 			await ReplyAsync("Pong!");
+		}
+
+		[Command(REPORT_COMMAND)]
+		[Summary("Reports the given user for suspected cheating")]
+		public async Task Report([Remainder] string argument) {
+
 		}
 
 		[Command(STATUS_COMMAND)]
@@ -57,7 +64,9 @@ namespace Omni.Bot.Modules {
 				string dateTimeFormat = "MM/dd/yyyy h:mm tt";
 				strBuilder.AppendLine($"Last Heartbeat: **{easternHeartbeat.ToString(dateTimeFormat)} ({timezone})**");
 				strBuilder.AppendLine($"Is Moss Active: **{userKeyValuePair.Value.IsMossRunning}**");
-				strBuilder.AppendLine($"Is Rogue Company Active: **{userKeyValuePair.Value.IsRogueCompanyRunning}**");
+				strBuilder.AppendLine($"Is Game Active: **{userKeyValuePair.Value.IsGameRunning}**");
+				strBuilder.AppendLine($"Game Type: **{userKeyValuePair.Value.GameType}**");
+				strBuilder.AppendLine($"Report Status: **{userKeyValuePair.Value.ReportStatus}**");
 			}
 			EmbedBuilder embed = new EmbedBuilder();
 			string title = "Statuses";
