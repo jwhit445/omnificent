@@ -1,3 +1,8 @@
+//This file is auto-generated.
+
+import { GameCode } from "./GameCode";
+import { Map } from "./Map";
+
 export class Game {
 	PK?: string;
 	SK?: string;

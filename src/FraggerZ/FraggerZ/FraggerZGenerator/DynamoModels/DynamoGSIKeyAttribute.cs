@@ -10,6 +10,8 @@ namespace FraggerZGenerator.DynamoModels {
 		public string Format;
 
 		public DynamoKeyType KeyType;
+
+		public string IndexName;
 		
 	}
 

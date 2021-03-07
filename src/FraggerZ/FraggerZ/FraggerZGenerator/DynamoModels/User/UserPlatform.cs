@@ -15,8 +15,8 @@ namespace FraggerZGenerator.DynamoModels {
 
 		public string PlatformUsername;
 
-		[DynamoGSIKey(Format = "PLATFORM#{" + nameof(PlatformCode) + "}#{" + nameof(PlatformId) + "}", KeyType = DynamoKeyType.SK)]
-		public string GSI1_SK;
+		[DynamoGSIKey(Format = "PLATFORM#{" + nameof(PlatformCode) + "}#{" + nameof(PlatformId) + "}", KeyType = DynamoKeyType.SK, IndexName = "GSI1")]
+		public string GSI1SK;
 
 	}
 

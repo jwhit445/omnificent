@@ -1,5 +1,4 @@
-import { DynamoDB } from 'aws-sdk'
-import { ExpressionAttributeValueMap, ItemList, QueryInput } from 'aws-sdk/clients/dynamodb';
+import DynamoDB from 'aws-sdk/clients/dynamodb';
 
 export class User {
     Id: string;
@@ -44,29 +43,25 @@ export async function update_user_from_ddb(dynamoDb: DynamoDB.DocumentClient, id
 };
 
 export async function get_all_from_ddb(dynamoDb: DynamoDB.DocumentClient): Promise<any> {
-    try {
-        const params: any = {
-            TableName: process.env.DYNAMODB_TABLE,
-            IndexName: 'InverseKey',
-            KeyConditionExpression: 'EntityType = :hashKey',
-            ExpressionAttributeValues: {
-                ':hashKey': 'user',
-            },
-            ExclusiveStartKey: undefined,
-        };
-        const retVal: any[] = [];
-        do {
-            const result = await dynamoDb.query(params).promise();
-            if(result.Items) {
-                retVal.push(...result.Items);
-            }
-            params.ExclusiveStartKey = result.LastEvaluatedKey;
+    const params: any = {
+        TableName: process.env.DYNAMODB_TABLE,
+        IndexName: 'InverseKey',
+        KeyConditionExpression: 'EntityType = :hashKey',
+        ExpressionAttributeValues: {
+            ':hashKey': 'user',
+        },
+        ExclusiveStartKey: undefined,
+    };
+    const retVal: any[] = [];
+    do {
+        const result = await dynamoDb.query(params).promise();
+        if(result.Items) {
+            retVal.push(...result.Items);
         }
-        while((params.ExclusiveStartKey !== undefined && params.ExclusiveStartKey !== null));
-        return retVal;
-    } catch (error) {
-        throw new Error('Couldn\'t fetch all users: '+error);
+        params.ExclusiveStartKey = result.LastEvaluatedKey;
     }
+    while((params.ExclusiveStartKey !== undefined && params.ExclusiveStartKey !== null));
+    return retVal;
 };
 
 export async function get_all_non_reset_from_ddb(dynamoDb: DynamoDB.DocumentClient, newMMR: number, newSigma: number): Promise<any> {

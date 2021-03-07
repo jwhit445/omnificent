@@ -1,3 +1,7 @@
+//This file is auto-generated.
+
+import { UserMatchStatus } from "./UserMatchStatus";
+
 export class UserMatch {
 	PK?: string;
 	SK?: string;

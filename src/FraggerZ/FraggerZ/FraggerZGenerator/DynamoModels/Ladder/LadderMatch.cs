@@ -17,14 +17,14 @@ namespace FraggerZGenerator.DynamoModels {
 
 		public DateTime DateTimeEnded;
 
-		public string Map_SK;
+		public string MapSK;
 
 		public MatchStatus MatchStatus;
 
 		public string WinningTeam;
 
-		[DynamoGSIKey(Format = "SEASON#{" + nameof(SeasonId) + "}#MATCH#{" + nameof(MatchNumber) + "}", KeyType = DynamoKeyType.SK)]
-		public string GS1_SK;
+		[DynamoGSIKey(Format = "SEASON#{" + nameof(SeasonId) + "}#MATCH#{" + nameof(MatchNumber) + "}", KeyType = DynamoKeyType.SK, IndexName = "GSI1")]
+		public string GS1SK;
 
 	}
 

@@ -1,3 +1,5 @@
+//This file is auto-generated.
+
 export class User {
 	PK?: string;
 	SK?: string;

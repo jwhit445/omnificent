@@ -1,3 +1,9 @@
+//This file is auto-generated.
+
+import { GameCode } from "./GameCode";
+import { RatingSystem } from "./RatingSystem";
+import { TeamSelectionType } from "./TeamSelectionType";
+
 export class LadderSettings {
 	PK?: string;
 	SK?: string;

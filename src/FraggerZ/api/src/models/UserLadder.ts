@@ -1,3 +1,7 @@
+//This file is auto-generated.
+
+import { GameCode } from "./GameCode";
+
 export class UserLadder {
 	PK?: string;
 	SK?: string;

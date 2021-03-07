@@ -267,6 +267,7 @@ export const calculatePoints = (team1Users: User[], team2Users: User[]): User[][
 }
 
 export const getOne = async (event: any, context: Context): Promise<any> => {
+
     const params = {
         TableName: process.env.DYNAMODB_TABLE,
         Key: {
