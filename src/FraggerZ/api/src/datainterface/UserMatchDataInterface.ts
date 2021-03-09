@@ -1,21 +1,22 @@
 // This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
+import { UserMatch } from "../models/UserMatch";
 import { UserPK } from "./models/UserPK";
 import { UserMatchSK } from "./models/UserMatchSK";
 
-export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserMatchSK): Promise<any> {
+export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserMatchSK): Promise<UserMatch[]> {
 	if(pk.ServerId === null || pk.ServerId === undefined) {
-		throw new Error("PK property: ServerId is not set.")
+		throw new Error("PK property: ServerId is not set.");
 	}
 	if(pk.UserId === null || pk.UserId === undefined) {
-		throw new Error("PK property: UserId is not set.")
+		throw new Error("PK property: UserId is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
 	let skKey = 'MATCH#';
 	if(sk.MatchNumber !== null && sk.MatchNumber !== undefined) {
-		skKey += `${sk.MatchNumber}`
+		skKey += `${sk.MatchNumber}`;
 		isPartialSK = false;
 	}
 	const params: any = {
@@ -38,17 +39,17 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: U
 	return retVal;
 }
 
-export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserMatchSK, sk: UserPK): Promise<any> {
+export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserMatchSK, sk: UserPK): Promise<UserMatch[]> {
 	if(pk.MatchNumber === null || pk.MatchNumber === undefined) {
-		throw new Error("PK property: MatchNumber is not set.")
+		throw new Error("PK property: MatchNumber is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `MATCH#${pk.MatchNumber}`;
 	let skKey = '#USER#';
 	if(sk.ServerId !== null && sk.ServerId !== undefined) {
-		skKey += `${sk.ServerId}#`
+		skKey += `${sk.ServerId}`;
 		if(sk.UserId !== null && sk.UserId !== undefined) {
-			skKey += `${sk.UserId}`
+			skKey += `#${sk.UserId}`;
 			isPartialSK = false;
 		}
 	}

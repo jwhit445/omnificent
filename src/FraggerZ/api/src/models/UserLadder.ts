@@ -3,8 +3,6 @@
 import { GameCode } from "./GameCode";
 
 export class UserLadder {
-	PK?: string;
-	SK?: string;
 	GameCode?: GameCode;
 	LadderName?: string;
 	SeasonId?: number;

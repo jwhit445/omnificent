@@ -5,8 +5,6 @@ import { RatingSystem } from "./RatingSystem";
 import { TeamSelectionType } from "./TeamSelectionType";
 
 export class LadderSettings {
-	PK?: string;
-	SK?: string;
 	SeasonId?: number;
 	TeamSize?: number;
 	NumberOfTeams?: number;

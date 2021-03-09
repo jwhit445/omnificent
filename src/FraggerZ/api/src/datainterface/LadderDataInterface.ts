@@ -1,27 +1,28 @@
 // This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
+import { Ladder } from "../models/Ladder";
 import { LadderPK } from "./models/LadderPK";
 
-export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: LadderPK): Promise<any> {
+export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: LadderPK): Promise<Ladder[]> {
 	if(pk.ServerId === null || pk.ServerId === undefined) {
-		throw new Error("PK property: ServerId is not set.")
+		throw new Error("PK property: ServerId is not set.");
 	}
 	if(pk.GameCode === null || pk.GameCode === undefined) {
-		throw new Error("PK property: GameCode is not set.")
+		throw new Error("PK property: GameCode is not set.");
 	}
 	if(pk.LadderName === null || pk.LadderName === undefined) {
-		throw new Error("PK property: LadderName is not set.")
+		throw new Error("PK property: LadderName is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `#LADDER#${pk.ServerId}#${pk.GameCode}#${pk.LadderName}`;
 	let skKey = '#LADDER#';
 	if(pk.ServerId !== null && pk.ServerId !== undefined) {
-		skKey += `${pk.ServerId}#`
+		skKey += `${pk.ServerId}`;
 		if(pk.GameCode !== null && pk.GameCode !== undefined) {
-			skKey += `${pk.GameCode}#`
+			skKey += `#${pk.GameCode}`;
 			if(pk.LadderName !== null && pk.LadderName !== undefined) {
-				skKey += `${pk.LadderName}`
+				skKey += `#${pk.LadderName}`;
 				isPartialSK = false;
 			}
 		}

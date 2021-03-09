@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FraggerZGenerator.DynamoModels {
 
@@ -23,7 +19,8 @@ namespace FraggerZGenerator.DynamoModels {
 
 		public string WinningTeam;
 
-		[DynamoGSIKey(Format = "SEASON#{" + nameof(SeasonId) + "}#MATCH#{" + nameof(MatchNumber) + "}", KeyType = DynamoKeyType.SK, IndexName = "GSI1")]
+		[DynamoGSIKey(Format = "SEASON#{" + nameof(SeasonId) + "}#{" + nameof(MatchNumber) + "}", KeyType = DynamoKeyType.SK, IndexName = "GSI1")]
+		[DynamoProperty(IsHidden = true)]
 		public string GS1SK;
 
 	}

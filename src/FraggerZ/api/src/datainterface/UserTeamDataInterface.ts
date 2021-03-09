@@ -1,23 +1,24 @@
 // This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
+import { UserTeam } from "../models/UserTeam";
 import { UserPK } from "./models/UserPK";
 import { UserTeamSK } from "./models/UserTeamSK";
 
-export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserTeamSK): Promise<any> {
+export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserTeamSK): Promise<UserTeam[]> {
 	if(pk.ServerId === null || pk.ServerId === undefined) {
-		throw new Error("PK property: ServerId is not set.")
+		throw new Error("PK property: ServerId is not set.");
 	}
 	if(pk.UserId === null || pk.UserId === undefined) {
-		throw new Error("PK property: UserId is not set.")
+		throw new Error("PK property: UserId is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
 	let skKey = 'PLATFORM#';
 	if(sk.GameCode !== null && sk.GameCode !== undefined) {
-		skKey += `${sk.GameCode}#`
+		skKey += `${sk.GameCode}`;
 		if(sk.TeamName !== null && sk.TeamName !== undefined) {
-			skKey += `${sk.TeamName}`
+			skKey += `#${sk.TeamName}`;
 			isPartialSK = false;
 		}
 	}
@@ -41,20 +42,20 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: U
 	return retVal;
 }
 
-export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserTeamSK, sk: UserPK): Promise<any> {
+export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserTeamSK, sk: UserPK): Promise<UserTeam[]> {
 	if(pk.GameCode === null || pk.GameCode === undefined) {
-		throw new Error("PK property: GameCode is not set.")
+		throw new Error("PK property: GameCode is not set.");
 	}
 	if(pk.TeamName === null || pk.TeamName === undefined) {
-		throw new Error("PK property: TeamName is not set.")
+		throw new Error("PK property: TeamName is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `PLATFORM#${pk.GameCode}#${pk.TeamName}`;
 	let skKey = '#USER#';
 	if(sk.ServerId !== null && sk.ServerId !== undefined) {
-		skKey += `${sk.ServerId}#`
+		skKey += `${sk.ServerId}`;
 		if(sk.UserId !== null && sk.UserId !== undefined) {
-			skKey += `${sk.UserId}`
+			skKey += `#${sk.UserId}`;
 			isPartialSK = false;
 		}
 	}

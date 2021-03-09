@@ -4,8 +4,6 @@ import { GameCode } from "./GameCode";
 import { MatchStatus } from "./MatchStatus";
 
 export class LadderMatch {
-	PK?: string;
-	SK?: string;
 	SeasonId?: number;
 	MatchNumber?: number;
 	DateTimeStarted?: Date;
@@ -13,7 +11,6 @@ export class LadderMatch {
 	MapSK?: string;
 	MatchStatus?: MatchStatus;
 	WinningTeam?: string;
-	GS1SK?: string;
 	ServerId?: string;
 	GameCode?: GameCode;
 	LadderName?: string;

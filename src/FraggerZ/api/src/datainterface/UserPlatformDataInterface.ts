@@ -1,24 +1,25 @@
 // This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
+import { UserPlatform } from "../models/UserPlatform";
 import { UserPK } from "./models/UserPK";
 import { UserPlatformSK } from "./models/UserPlatformSK";
 import { UserPlatformGSI1SK } from "./models/UserPlatformGSI1SK";
 
-export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserPlatformSK): Promise<any> {
+export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserPlatformSK): Promise<UserPlatform[]> {
 	if(pk.ServerId === null || pk.ServerId === undefined) {
-		throw new Error("PK property: ServerId is not set.")
+		throw new Error("PK property: ServerId is not set.");
 	}
 	if(pk.UserId === null || pk.UserId === undefined) {
-		throw new Error("PK property: UserId is not set.")
+		throw new Error("PK property: UserId is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
 	let skKey = 'PLATFORM#';
 	if(sk.PlatformCode !== null && sk.PlatformCode !== undefined) {
-		skKey += `${sk.PlatformCode}#`
+		skKey += `${sk.PlatformCode}`;
 		if(sk.PlatformUsername !== null && sk.PlatformUsername !== undefined) {
-			skKey += `${sk.PlatformUsername}`
+			skKey += `#${sk.PlatformUsername}`;
 			isPartialSK = false;
 		}
 	}
@@ -42,20 +43,20 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: U
 	return retVal;
 }
 
-export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserPlatformSK, sk: UserPK): Promise<any> {
+export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserPlatformSK, sk: UserPK): Promise<UserPlatform[]> {
 	if(pk.PlatformCode === null || pk.PlatformCode === undefined) {
-		throw new Error("PK property: PlatformCode is not set.")
+		throw new Error("PK property: PlatformCode is not set.");
 	}
 	if(pk.PlatformUsername === null || pk.PlatformUsername === undefined) {
-		throw new Error("PK property: PlatformUsername is not set.")
+		throw new Error("PK property: PlatformUsername is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `PLATFORM#${pk.PlatformCode}#${pk.PlatformUsername}`;
 	let skKey = '#USER#';
 	if(sk.ServerId !== null && sk.ServerId !== undefined) {
-		skKey += `${sk.ServerId}#`
+		skKey += `${sk.ServerId}`;
 		if(sk.UserId !== null && sk.UserId !== undefined) {
-			skKey += `${sk.UserId}`
+			skKey += `#${sk.UserId}`;
 			isPartialSK = false;
 		}
 	}
@@ -80,20 +81,20 @@ export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserPl
 	return retVal;
 }
 
-export async function getDBGSI1(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserPlatformGSI1SK): Promise<any> {
+export async function getDBGSI1(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserPlatformGSI1SK): Promise<UserPlatform[]> {
 	if(pk.ServerId === null || pk.ServerId === undefined) {
-		throw new Error("PK property: ServerId is not set.")
+		throw new Error("PK property: ServerId is not set.");
 	}
 	if(pk.UserId === null || pk.UserId === undefined) {
-		throw new Error("PK property: UserId is not set.")
+		throw new Error("PK property: UserId is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
 	let skKey = 'PLATFORM#';
 	if(sk.PlatformCode !== null && sk.PlatformCode !== undefined) {
-		skKey += `${sk.PlatformCode}#`
+		skKey += `${sk.PlatformCode}`;
 		if(sk.PlatformId !== null && sk.PlatformId !== undefined) {
-			skKey += `${sk.PlatformId}`
+			skKey += `#${sk.PlatformId}`;
 			isPartialSK = false;
 		}
 	}

@@ -1,25 +1,26 @@
 // This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
+import { UserLadder } from "../models/UserLadder";
 import { UserPK } from "./models/UserPK";
 import { UserLadderSK } from "./models/UserLadderSK";
 
-export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserLadderSK): Promise<any> {
+export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserLadderSK): Promise<UserLadder[]> {
 	if(pk.ServerId === null || pk.ServerId === undefined) {
-		throw new Error("PK property: ServerId is not set.")
+		throw new Error("PK property: ServerId is not set.");
 	}
 	if(pk.UserId === null || pk.UserId === undefined) {
-		throw new Error("PK property: UserId is not set.")
+		throw new Error("PK property: UserId is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
 	let skKey = 'LADDER#';
 	if(sk.GameCode !== null && sk.GameCode !== undefined) {
-		skKey += `${sk.GameCode}#`
+		skKey += `${sk.GameCode}`;
 		if(sk.LadderName !== null && sk.LadderName !== undefined) {
-			skKey += `${sk.LadderName}#`
+			skKey += `#${sk.LadderName}`;
 			if(sk.SeasonId !== null && sk.SeasonId !== undefined) {
-				skKey += `${sk.SeasonId}`
+				skKey += `#${sk.SeasonId}`;
 				isPartialSK = false;
 			}
 		}
@@ -44,23 +45,23 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: U
 	return retVal;
 }
 
-export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserLadderSK, sk: UserPK): Promise<any> {
+export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserLadderSK, sk: UserPK): Promise<UserLadder[]> {
 	if(pk.GameCode === null || pk.GameCode === undefined) {
-		throw new Error("PK property: GameCode is not set.")
+		throw new Error("PK property: GameCode is not set.");
 	}
 	if(pk.LadderName === null || pk.LadderName === undefined) {
-		throw new Error("PK property: LadderName is not set.")
+		throw new Error("PK property: LadderName is not set.");
 	}
 	if(pk.SeasonId === null || pk.SeasonId === undefined) {
-		throw new Error("PK property: SeasonId is not set.")
+		throw new Error("PK property: SeasonId is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `LADDER#${pk.GameCode}#${pk.LadderName}#${pk.SeasonId}`;
 	let skKey = '#USER#';
 	if(sk.ServerId !== null && sk.ServerId !== undefined) {
-		skKey += `${sk.ServerId}#`
+		skKey += `${sk.ServerId}`;
 		if(sk.UserId !== null && sk.UserId !== undefined) {
-			skKey += `${sk.UserId}`
+			skKey += `#${sk.UserId}`;
 			isPartialSK = false;
 		}
 	}

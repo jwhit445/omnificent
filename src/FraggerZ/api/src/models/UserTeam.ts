@@ -4,8 +4,6 @@ import { PlayerType } from "./PlayerType";
 import { GameCode } from "./GameCode";
 
 export class UserTeam {
-	PK?: string;
-	SK?: string;
 	GameCode?: GameCode;
 	TeamName?: string;
 	PlayerType?: PlayerType;

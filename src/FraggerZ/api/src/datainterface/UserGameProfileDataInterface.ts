@@ -1,21 +1,22 @@
 // This file is auto-generated.
 
 import DynamoDB from 'aws-sdk/clients/dynamodb';
+import { UserGameProfile } from "../models/UserGameProfile";
 import { UserPK } from "./models/UserPK";
 import { UserGameProfileSK } from "./models/UserGameProfileSK";
 
-export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserGameProfileSK): Promise<any> {
+export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: UserGameProfileSK): Promise<UserGameProfile[]> {
 	if(pk.ServerId === null || pk.ServerId === undefined) {
-		throw new Error("PK property: ServerId is not set.")
+		throw new Error("PK property: ServerId is not set.");
 	}
 	if(pk.UserId === null || pk.UserId === undefined) {
-		throw new Error("PK property: UserId is not set.")
+		throw new Error("PK property: UserId is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `#USER#${pk.ServerId}#${pk.UserId}`;
 	let skKey = 'GAMEPROFILE#';
 	if(sk.GameCode !== null && sk.GameCode !== undefined) {
-		skKey += `${sk.GameCode}`
+		skKey += `${sk.GameCode}`;
 		isPartialSK = false;
 	}
 	const params: any = {
@@ -38,17 +39,17 @@ export async function getDB(dynamoDb: DynamoDB.DocumentClient, pk: UserPK, sk: U
 	return retVal;
 }
 
-export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserGameProfileSK, sk: UserPK): Promise<any> {
+export async function getDBInverse(dynamoDb: DynamoDB.DocumentClient, pk: UserGameProfileSK, sk: UserPK): Promise<UserGameProfile[]> {
 	if(pk.GameCode === null || pk.GameCode === undefined) {
-		throw new Error("PK property: GameCode is not set.")
+		throw new Error("PK property: GameCode is not set.");
 	}
 	let isPartialSK = true;
 	const pkKey = `GAMEPROFILE#${pk.GameCode}`;
 	let skKey = '#USER#';
 	if(sk.ServerId !== null && sk.ServerId !== undefined) {
-		skKey += `${sk.ServerId}#`
+		skKey += `${sk.ServerId}`;
 		if(sk.UserId !== null && sk.UserId !== undefined) {
-			skKey += `${sk.UserId}`
+			skKey += `#${sk.UserId}`;
 			isPartialSK = false;
 		}
 	}
