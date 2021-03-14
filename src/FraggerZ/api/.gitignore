@@ -1,3 +1,5 @@
-/node_modules
-.serverless
-/dist
+node_modules
+dist
+.vscode
+.aws-sam
+/docker

@@ -1,0 +1,8 @@
+{
+  "name": "dependencies-layer",
+  "version": "1.0.0",
+  "dependencies": {
+    "aws-xray-sdk-core": "^3.2.0",
+    "winston": "^3.3.3"
+  }
+}
