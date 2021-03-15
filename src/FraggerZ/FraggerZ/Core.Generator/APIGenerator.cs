@@ -59,7 +59,7 @@ namespace Core.Generator {
 		}
 
 		private static string ToFirstUpper(string str) {
-
+			return "";
 		}
 
 	}

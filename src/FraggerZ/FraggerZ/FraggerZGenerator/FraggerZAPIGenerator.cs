@@ -12,6 +12,7 @@ namespace FraggerZGenerator {
 	public static class FraggerZAPIGenerator {
 
 		public static void Generate() {
+			DynamoGenerator.Generate();
 			ApiGenerator.Generate(@"..\..\..\..\..\assets\swagger.json", @"..\..\..\API");
 		}
 
