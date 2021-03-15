@@ -5,8 +5,8 @@ namespace FraggerZGenerator {
 	public class Program {
 
 		public static void Main(string[] args) {
-			DynamoGenerator.Generate();
-			APIGenerator.Generate();
+			//DynamoGenerator.Generate();
+			FraggerZAPIGenerator.Generate();
 		}
 
 	}
