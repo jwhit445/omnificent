@@ -8,7 +8,9 @@ Parameters:
   Stage:
     Type: String
     Description: Stage to deploy resources to
+    Default: local
     AllowedValues:
+      - local
       - staging
       - production
 
@@ -64,8 +66,8 @@ Resources:
       #   Type: !If [IsProduction, CustomLambdaLinear25PercentEvery1Minute, AllAtOnce]
       #   Hooks:
       #     PreTraffic: !Ref RegisterUserPreTraffic
-        Alarms:
-          - !Ref RegisterUserAliasErrorMetricGreaterThanZeroAlarm
+      # Alarms:
+      #   - !Ref RegisterUserAliasErrorMetricGreaterThanZeroAlarm
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FraggerZTable
@@ -122,97 +124,97 @@ Resources:
     Metadata:
       BuildMethod: nodejs14.x
 
-  CognitoUserPool:
-    Type: AWS::Cognito::UserPool
-    Properties:
-      UserPoolName: !Sub "${Stage}-fraggerz-api-user-pool"
-      Policies:
-        PasswordPolicy:
-          MinimumLength: 6
-          RequireLowercase: false
-          RequireNumbers: true
-          RequireSymbols: false
-          RequireUppercase: false
-      UsernameAttributes:
-        - email
-      Schema:
-        - AttributeDataType: String
-          Name: email
-          Required: false
+  # CognitoUserPool:
+  #   Type: AWS::Cognito::UserPool
+  #   Properties:
+  #     UserPoolName: !Sub "${Stage}-fraggerz-api-user-pool"
+  #     Policies:
+  #       PasswordPolicy:
+  #         MinimumLength: 6
+  #         RequireLowercase: false
+  #         RequireNumbers: true
+  #         RequireSymbols: false
+  #         RequireUppercase: false
+  #     UsernameAttributes:
+  #       - email
+  #     Schema:
+  #       - AttributeDataType: String
+  #         Name: email
+  #         Required: false
 
-  UserPoolClient:
-    Type: "AWS::Cognito::UserPoolClient"
-    Properties:
-      UserPoolId: !Ref CognitoUserPool
-      AllowedOAuthFlowsUserPoolClient: true
-      AllowedOAuthFlows:
-        - implicit
-      AllowedOAuthScopes:
-        - email
-        - openid
-      CallbackURLs:
-        - https://aws.amazon.com/
-      SupportedIdentityProviders:
-        - COGNITO
-      ExplicitAuthFlows:
-        - ALLOW_REFRESH_TOKEN_AUTH 
-        - !If
-          - IsProduction
-          - !Ref 'AWS::NoValue'
-          - ALLOW_USER_PASSWORD_AUTH
+  # UserPoolClient:
+  #   Type: "AWS::Cognito::UserPoolClient"
+  #   Properties:
+  #     UserPoolId: !Ref CognitoUserPool
+  #     AllowedOAuthFlowsUserPoolClient: true
+  #     AllowedOAuthFlows:
+  #       - implicit
+  #     AllowedOAuthScopes:
+  #       - email
+  #       - openid
+  #     CallbackURLs:
+  #       - https://aws.amazon.com/
+  #     SupportedIdentityProviders:
+  #       - COGNITO
+  #     ExplicitAuthFlows:
+  #       - ALLOW_REFRESH_TOKEN_AUTH 
+  #       - !If
+  #         - IsProduction
+  #         - !Ref 'AWS::NoValue'
+  #         - ALLOW_USER_PASSWORD_AUTH
 
-  UserPoolDomain:
-    Type: AWS::Cognito::UserPoolDomain
-    Properties: 
-      Domain: !Sub "fraggerz-api-${Stage}-${AWS::AccountId}"
-      UserPoolId: !Ref CognitoUserPool
+  # UserPoolDomain:
+  #   Type: AWS::Cognito::UserPoolDomain
+  #   Properties: 
+  #     Domain: !Sub "fraggerz-api-${Stage}-${AWS::AccountId}"
+  #     UserPoolId: !Ref CognitoUserPool
 
-  RegisterUserPreTraffic:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub 'CodeDeployHook_${Stage}-fraggerz-create-pre-traffic-check'
-      CodeUri: ./src/lambdas/user-pre-traffic/dist/
-      Handler: add.handler
-      Environment:
-        Variables:
-          TABLE: !Ref FraggerZTable
-          FN_NEW_VERSION: !Ref RegisterUser.Version
-      Tags:
-        project: fraggerz-api
-        environment: !Ref Stage
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
-        - Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-              - codedeploy:PutLifecycleEventHookExecutionStatus
-            Resource:
-              !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ServerlessDeploymentApplication}/*'
-        - Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-              - lambda:InvokeFunction
-            Resource: !Ref RegisterUser.Version
+  # RegisterUserPreTraffic:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub 'CodeDeployHook_${Stage}-fraggerz-create-pre-traffic-check'
+  #     CodeUri: ./src/lambdas/user-pre-traffic/dist/
+  #     Handler: add.handler
+  #     Environment:
+  #       Variables:
+  #         TABLE: !Ref FraggerZTable
+  #         FN_NEW_VERSION: !Ref RegisterUser.Version
+  #     Tags:
+  #       project: fraggerz-api
+  #       environment: !Ref Stage
+  #     Policies:
+  #       - DynamoDBCrudPolicy:
+  #           TableName: !Ref FraggerZTable
+  #       - Version: '2012-10-17'
+  #         Statement:
+  #         - Effect: Allow
+  #           Action:
+  #             - codedeploy:PutLifecycleEventHookExecutionStatus
+  #           Resource:
+  #             !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ServerlessDeploymentApplication}/*'
+  #       - Version: '2012-10-17'
+  #         Statement:
+  #         - Effect: Allow
+  #           Action:
+  #             - lambda:InvokeFunction
+  #           Resource: !Ref RegisterUser.Version
 
-  RegisterUserAliasErrorMetricGreaterThanZeroAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmDescription: Lambda Function Error > 0
-      ComparisonOperator: GreaterThanThreshold
-      Dimensions:
-        - Name: Resource
-          Value: !Sub '${RegisterUser}:${Stage}'
-        - Name: FunctionName
-          Value: !Ref RegisterUser
-      EvaluationPeriods: 2
-      MetricName: Errors
-      Namespace: AWS/Lambda
-      Period: 60
-      Statistic: Sum
-      Threshold: 0
+  # RegisterUserAliasErrorMetricGreaterThanZeroAlarm:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     AlarmDescription: Lambda Function Error > 0
+  #     ComparisonOperator: GreaterThanThreshold
+  #     Dimensions:
+  #       - Name: Resource
+  #         Value: !Sub '${RegisterUser}:${Stage}'
+  #       - Name: FunctionName
+  #         Value: !Ref RegisterUser
+  #     EvaluationPeriods: 2
+  #     MetricName: Errors
+  #     Namespace: AWS/Lambda
+  #     Period: 60
+  #     Statistic: Sum
+  #     Threshold: 0
 
 Outputs:
   ApiEndpoint:

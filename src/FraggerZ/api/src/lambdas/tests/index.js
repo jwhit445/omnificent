@@ -1,6 +1,6 @@
 import { get, post } from 'axios';
 import { expect } from 'chai';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 
 const region = process.env.AWS_REGION;
 const cognitoServiceProvider = new AWS.CognitoIdentityServiceProvider({
@@ -12,7 +12,7 @@ describe('End-to-end tests for FraggerZ API', () => {
   const apiEndpoint = process.env.API_ENDPOINT;
   const userPoolId = process.env.USER_POOL_ID;
   const userPoolClientId = process.env.USER_POOL_CLIENT_ID;
-  const password = uuidv4();
+  // const password = uuidv4();
 
   before(async () => {
   });

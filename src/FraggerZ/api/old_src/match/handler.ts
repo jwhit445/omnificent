@@ -2,7 +2,7 @@ import { Handler, Context } from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk'
 import { rate, Rating, quality } from 'ts-trueskill';
 import { get_all_matches_from_ddb, Match, MatchStatus, match_to_ddb, match_to_ddb_update_params } from './match';
-import { v4 } from 'uuid';
+// import { v4 } from 'uuid';
 import { get_user_from_ddb, update_user_from_ddb, User, user_to_ddb_update_params } from '../user/user';
 import { INITIAL_SIGMA } from '../user/handler';
 
@@ -20,7 +20,7 @@ module.exports.register = async (event: any, context: Context): Promise<any> => 
 
     const params = {
         TableName: process.env.DYNAMODB_TABLE,
-        Item: match_to_ddb(v4(), await getNextMatchNumber(), data),
+        Item: match_to_ddb('', await getNextMatchNumber(), data),
     }
 
     // write the match to the database

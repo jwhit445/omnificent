@@ -24,6 +24,9 @@
       "baseUrl": ".",
       "paths": {
         "*": ["../../layers/dependencies/nodejs/node_modules/*"],
+        "/opt/aws/*": ["../../layers/core/src/aws/*"],
+        "/opt/datainterface/*": ["../../layers/core/src/datainterface/*"],
+        "/opt/models/*": ["../../layers/core/src/models/*"],
         "/opt/utils/*": ["../../layers/core/src/utils/*"],
       }
     },

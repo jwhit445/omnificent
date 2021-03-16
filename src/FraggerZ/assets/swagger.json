@@ -18,12 +18,6 @@
           "handler": "getStats.handler",
           "name": "stats"
         }
-        "x-amazon-apigateway-integration": {
-          "httpMethod": "POST",
-          "uri": "arn:aws:apigateway:us-east-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-2:773089281569:function:fraggerz-api-alpha-matchRegister/invocations",
-          "passthroughBehavior": "when_no_match",
-          "type": "aws_proxy"
-        }
       }
     },
     "/match/{id}": {

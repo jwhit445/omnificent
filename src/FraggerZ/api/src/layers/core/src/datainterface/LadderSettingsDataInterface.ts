@@ -1,6 +1,6 @@
 // This file is auto-generated.
 
-import DynamoDB from 'aws-sdk/clients/dynamodb';
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import { LadderSettings } from "../models/LadderSettings";
 import { LadderPK } from "./models/LadderPK";
 import { LadderSettingsSK } from "./models/LadderSettingsSK";

@@ -1,6 +1,6 @@
 // This file is auto-generated.
 
-import DynamoDB from 'aws-sdk/clients/dynamodb';
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import { UserPlatform } from "../models/UserPlatform";
 import { UserPK } from "./models/UserPK";
 import { UserPlatformSK } from "./models/UserPlatformSK";

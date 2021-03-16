@@ -1,6 +1,6 @@
 import { Handler, Context } from 'aws-lambda';
 import { DynamoDB } from 'aws-sdk'
-import { v4 } from 'uuid';
+// import { v4 } from 'uuid';
 import { Team, team_to_ddb, team_to_ddb_update_params } from "./team";
 
 const dynamoDb = new DynamoDB.DocumentClient()
