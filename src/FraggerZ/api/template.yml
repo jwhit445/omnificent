@@ -32,6 +32,10 @@ Globals:
     Tags:
       project: my-project
       environment: !Ref Stage
+    Layers:
+      - !Ref DependenciesLayer
+      - !Ref CoreLayer
+    AutoPublishAlias: !Ref Stage
 
 Resources:
 
@@ -52,16 +56,12 @@ Resources:
           CognitoAuth:
             UserPoolArn: !GetAtt CognitoUserPool.Arn
   
-  RegisterUser:
+  UserAdd:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${Stage}-user-register'
+      FunctionName: !Sub '${Stage}-user-add'
       CodeUri: src/lambdas/user/dist/.
       Handler: add.handler
-      AutoPublishAlias: !Ref Stage
-      Layers:
-        - !Ref DependenciesLayer
-        - !Ref CoreLayer
       # DeploymentPreference:
       #   Type: !If [IsProduction, CustomLambdaLinear25PercentEvery1Minute, AllAtOnce]
       #   Hooks:
@@ -79,6 +79,248 @@ Resources:
             Method: post
             RestApiId:
               Ref: FraggerZApi
+
+  UserGetList:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-user-getList'
+      CodeUri: src/lambdas/user/dist/.
+      Handler: getList.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /user
+            Method: get
+            RestApiId:
+              Ref: FraggerZApi
+
+  UserGetOne:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-user-getOne'
+      CodeUri: src/lambdas/user/dist/.
+      Handler: getOne.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /user/{id}
+            Method: get
+            RestApiId:
+              Ref: FraggerZApi
+
+  UserUpdate:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-user-update'
+      CodeUri: src/lambdas/user/dist/.
+      Handler: update.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /user/{id}
+            Method: put
+            RestApiId:
+              Ref: FraggerZApi
+
+  UserGetStats:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-user-getStats'
+      CodeUri: src/lambdas/user/dist/.
+      Handler: getStats.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /user/{id}/stats
+            Method: get
+            RestApiId:
+              Ref: FraggerZApi
+            RequestParameters:
+              - method.request.querystring.ladderId:
+                  Required: true
+              - method.request.querystring.season:
+                  Required: true
+              - method.request.querystring.gameCode:
+                  Required: true
+
+  UserGetGameProfile:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-user-getGameProfile'
+      CodeUri: src/lambdas/user/dist/.
+      Handler: getGameProfile.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /user/{id}/gameprofile
+            Method: get
+            RestApiId:
+              Ref: FraggerZApi
+
+  UserUpdateGameProfile:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-user-updateGameProfile'
+      CodeUri: src/lambdas/user/dist/.
+      Handler: updateGameProfile.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /user/{id}/gameprofile
+            Method: put
+            RestApiId:
+              Ref: FraggerZApi
+
+  UserGetLadder:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-user-getLadder'
+      CodeUri: src/lambdas/user/dist/.
+      Handler: getLadder.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /user/{id}/ladder
+            Method: get
+            RestApiId:
+              Ref: FraggerZApi
+
+  UserUpdateLadder:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-user-updateLadder'
+      CodeUri: src/lambdas/user/dist/.
+      Handler: updateLadder.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /user/{id}/ladder
+            Method: put
+            RestApiId:
+              Ref: FraggerZApi
+
+  LadderGetLeaderboard:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-ladder-getLeaderboard'
+      CodeUri: src/lambdas/ladder/dist/.
+      Handler: getLeaderboard.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /ladder/{id}/leaderboard
+            Method: get
+            RestApiId:
+              Ref: FraggerZApi
+
+  MatchAdd:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-match-add'
+      CodeUri: src/lambdas/match/dist/.
+      Handler: add.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /match
+            Method: post
+            RestApiId:
+              Ref: FraggerZApi
+
+  MatchGetOne:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-match-getOne'
+      CodeUri: src/lambdas/match/dist/.
+      Handler: getOne.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /match/{id}
+            Method: get
+            RestApiId:
+              Ref: FraggerZApi
+
+  MatchUpdate:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-match-update'
+      CodeUri: src/lambdas/match/dist/.
+      Handler: update.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /match/{id}
+            Method: put
+            RestApiId:
+              Ref: FraggerZApi
+
+  MatchReport:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-match-report'
+      CodeUri: src/lambdas/match/dist/.
+      Handler: report.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FraggerZTable
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /match/{id}/report
+            Method: put
+            RestApiId:
+              Ref: FraggerZApi
+            
         
   FraggerZTable:
     Type: AWS::DynamoDB::Table
