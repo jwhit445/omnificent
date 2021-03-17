@@ -6,6 +6,20 @@
   },
   "schemes": [ "https" ],
   "paths": {
+    "/ladder/{id}/leaderboard": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "TODO: Change"
+          }
+        },
+        "description": "Retrieve leaderboard for a given ladder.",
+        "x-fraggerz-generator-lambda": {
+          "handler": "getLeaderboard.handler",
+          "name": "LadderGetLeaderboard"
+        }
+      }
+    },
     "/match": {
       "post": {
         "responses": {
@@ -13,10 +27,10 @@
             "description": "TODO: Change"
           }
         },
-        "description": "Retrieve user stats for a given ladder.",
+        "description": "Create a new match.",
         "x-fraggerz-generator-lambda": {
-          "handler": "getStats.handler",
-          "name": "stats"
+          "handler": "add.handler",
+          "name": "MatchAdd"
         }
       }
     },
@@ -31,7 +45,7 @@
         "x-fraggerz-generator-lambda": {
           "handler": "getOne.handler",
           "name": "MatchGetOne"
-        },
+        }
       },
       "put": {
         "responses": {
@@ -56,7 +70,7 @@
         "description": "Report a given match.",
         "x-fraggerz-generator-lambda": {
           "handler": "report.handler",
-          "name": "ReportMach"
+          "name": "MatchReport"
         }
       }
     },
@@ -71,7 +85,7 @@
         "x-fraggerz-generator-lambda": {
           "handler": "register.handler",
           "name": "RegisterTeam"
-        },
+        }
       }
     },
     "/team/{id}": {
@@ -111,7 +125,7 @@
         "x-fraggerz-generator-lambda": {
           "handler": "getStats.handler",
           "name": "GetTeamStats"
-        },
+        }
       }
     },
     "/user": {
@@ -121,10 +135,30 @@
             "description": "TODO: Change"
           }
         },
-        "description": "Return all users.",
+        "parameters": [
+          {
+            "name": "matchNumber",
+            "type": "integer",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "gameCode",
+            "type": "string",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "teamName",
+            "type": "string",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "description": "Return list of users.",
         "x-fraggerz-generator-lambda": {
-          "handler": "getAll.handler",
-          "name": "GetAllUsers"
+          "handler": "getList.handler",
+          "name": "UserGetList"
         }
       },
       "post": {
@@ -135,22 +169,8 @@
         },
         "description": "Create a new user with the given attributes.",
         "x-fraggerz-generator-lambda": {
-          "handler": "register.handler",
-          "name": "RegisterUser"
-        }
-      }
-    },
-    "/user/leaderboard": {
-      "get": {
-        "responses": {
-          "200": {
-            "description": "TODO: Change"
-          }
-        },
-        "description": "Retrieve leaderboard for a given ladder.",
-        "x-fraggerz-generator-lambda": {
-          "handler": "getLeaderboard.handler",
-          "name": "GetLeaderboard"
+          "handler": "add.handler",
+          "name": "UserAdd"
         }
       }
     },
@@ -164,13 +184,7 @@
         "description": "Retrieve the user for a given ID.",
         "x-fraggerz-generator-lambda": {
           "handler": "getOne.handler",
-          "name": "GetUser"
-        },
-        "x-amazon-apigateway-integration": {
-          "httpMethod": "POST",
-          "uri": "arn:aws:apigateway:us-east-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-2:773089281569:function:fraggerz-api-alpha-userGetOne/invocations",
-          "passthroughBehavior": "when_no_match",
-          "type": "aws_proxy"
+          "name": "UserGet"
         }
       },
       "put": {
@@ -182,21 +196,113 @@
         "description": "Update attributes for a given user.",
         "x-fraggerz-generator-lambda": {
           "handler": "update.handler",
-          "name": "UpdateUser"
+          "name": "UserUpdate"
         }
       }
     },
-    "/user/{id}/stats": {
+    "/user/{id}/gameprofile": {
       "get": {
         "responses": {
           "200": {
             "description": "TODO: Change"
           }
         },
+        "description": "Retrieve the game profile for a given user ID.",
+        "x-fraggerz-generator-lambda": {
+          "handler": "getGameProfile.handler",
+          "name": "UserGetGameProfile"
+        }
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "TODO: Change"
+          }
+        },
+        "description": "Update attributes for a given user's game profile.",
+        "x-fraggerz-generator-lambda": {
+          "handler": "updateGameProfile.handler",
+          "name": "UserUpdateGameProfile"
+        }
+      }
+    },
+    "/user/{id}/ladder": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "TODO: Change"
+          }
+        },
+        "parameters": [
+          {
+            "name": "ladderId",
+            "type": "string",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "season",
+            "type": "integer",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "gameCode",
+            "type": "string",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "description": "Retrieve the ladder for a given user ID.",
+        "x-fraggerz-generator-lambda": {
+          "handler": "getLadder.handler",
+          "name": "UserGetLadder"
+        }
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "TODO: Change"
+          }
+        },
+        "description": "Update attributes for a given user's ladder.",
+        "x-fraggerz-generator-lambda": {
+          "handler": "updateLadder.handler",
+          "name": "UserUpdateLadder"
+        }
+      }
+    },
+    "/user/{user_id}/stats": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "TODO: Change"
+          }
+        },
+        "parameters": [
+          {
+            "name": "ladderId",
+            "type": "string",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "season",
+            "type": "integer",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "gameCode",
+            "type": "string",
+            "in": "query",
+            "required": true
+          }
+        ],
         "description": "Retrieve user stats for a given ladder.",
         "x-fraggerz-generator-lambda": {
           "handler": "getStats.handler",
-          "name": "GetStats"
+          "name": "UserGetStats"
         }
       }
     }
