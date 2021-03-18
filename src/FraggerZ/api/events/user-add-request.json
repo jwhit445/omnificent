@@ -1,5 +1,5 @@
 {
-    "body": "{ \"ServerId\": \"DISCORD#99912345\", \"UserId\": \"123123123123\", \"Username\": \"t1dev\"}",
+    "body": "{ \"ServerId\": \"DISCORD#99912345\", \"UserId\": \"123123123126\", \"Username\": \"t1dev\"}",
     "resource": "/{proxy+}",
     "path": "/path/to/resource",
     "httpMethod": "POST",
@@ -11,6 +11,7 @@
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
       "Accept-Encoding": "gzip, deflate, sdch",
       "Accept-Language": "en-US,en;q=0.8",
+      "Authorization": "Basic RElTQ09SRCMwMDAwMDAwMDpESVNDT1JEIzAwMDAwMDAw",
       "Cache-Control": "max-age=0",
       "CloudFront-Forwarded-Proto": "https",
       "CloudFront-Is-Desktop-Viewer": "true",

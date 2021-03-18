@@ -8,11 +8,15 @@ Parameters:
   Stage:
     Type: String
     Description: Stage to deploy resources to
-    Default: local
+    Default: alpha
     AllowedValues:
       - local
+      - alpha
       - staging
       - production
+  TableName:
+    Type: String
+    Default: fraggerz-api-2-alpha # Ensure the suffix matches stage
 
 Conditions:
   IsProduction: !Equals [ !Ref Stage, production ]
@@ -27,8 +31,8 @@ Globals:
     Tracing: Active
     Environment:
       Variables:
-        DYNAMODB_TABLE: !Ref FraggerZTable
-        NODE_ENV: dev
+        DYNAMODB_TABLE: !Ref TableName
+        NODE_ENV: !Ref Stage
     Tags:
       project: my-project
       environment: !Ref Stage
@@ -70,7 +74,7 @@ Resources:
       #   - !Ref RegisterUserAliasErrorMetricGreaterThanZeroAlarm
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -88,7 +92,7 @@ Resources:
       Handler: getList.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -106,7 +110,7 @@ Resources:
       Handler: getOne.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -124,7 +128,7 @@ Resources:
       Handler: update.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -142,7 +146,7 @@ Resources:
       Handler: getStats.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -167,7 +171,7 @@ Resources:
       Handler: getGameProfile.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -185,7 +189,7 @@ Resources:
       Handler: updateGameProfile.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -203,7 +207,7 @@ Resources:
       Handler: getLadder.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -221,7 +225,7 @@ Resources:
       Handler: updateLadder.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -239,7 +243,7 @@ Resources:
       Handler: getLeaderboard.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -257,7 +261,7 @@ Resources:
       Handler: add.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -275,7 +279,7 @@ Resources:
       Handler: getOne.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -293,7 +297,7 @@ Resources:
       Handler: update.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -311,7 +315,7 @@ Resources:
       Handler: report.handler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref FraggerZTable
+            TableName: !Ref TableName
       Events:
         ApiEvent:
           Type: Api
@@ -325,7 +329,7 @@ Resources:
   FraggerZTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: fraggerz-api-2-${Stage}
+      TableName: !Ref TableName
       AttributeDefinitions:
         - AttributeName: PK
           AttributeType: S
@@ -419,14 +423,14 @@ Resources:
   #     Handler: add.handler
   #     Environment:
   #       Variables:
-  #         TABLE: !Ref FraggerZTable
+  #         TABLE: !Ref TableName
   #         FN_NEW_VERSION: !Ref RegisterUser.Version
   #     Tags:
   #       project: fraggerz-api
   #       environment: !Ref Stage
   #     Policies:
   #       - DynamoDBCrudPolicy:
-  #           TableName: !Ref FraggerZTable
+  #           TableName: !Ref TableName
   #       - Version: '2012-10-17'
   #         Statement:
   #         - Effect: Allow
@@ -470,4 +474,4 @@ Outputs:
     Value: !Ref UserPoolClient
   FraggerZTable:
     Description: "DynamoDB table where we will store FraggerZ information"
-    Value: !Ref FraggerZTable
+    Value: !Ref TableName
