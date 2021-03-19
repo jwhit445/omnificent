@@ -1,5 +1,5 @@
 {
-    "body": "{ \"ServerId\": \"DISCORD#99912345\", \"UserId\": \"123123123126\", \"Username\": \"t1dev\"}",
+    "body": "{ \"UserId\": \"6\", \"Username\": \"t1dev\" }",
     "resource": "/{proxy+}",
     "path": "/path/to/resource",
     "httpMethod": "POST",

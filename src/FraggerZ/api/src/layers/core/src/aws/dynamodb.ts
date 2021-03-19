@@ -20,3 +20,5 @@ export function createDbInst(): DynamoDB.DocumentClient {
         throw err;
     }
 }
+
+export { DynamoDB }

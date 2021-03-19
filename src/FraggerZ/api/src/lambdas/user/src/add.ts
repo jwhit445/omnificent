@@ -1,11 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
-import * as DynamoDB from 'aws-sdk/clients/dynamodb';
-import { createDbInst } from '/opt/aws/dynamodb';
+import { createDbInst, DynamoDB } from '/opt/aws/dynamodb';
 import { responseOk, responseBadRequest, responseServerError } from '/opt/utils/responses';
 import { lambdaHandler } from '/opt/utils/lambdaHandler';
 import { createLogger } from '/opt/utils/logger';
-import { UserPK } from '/opt/datainterface/models/UserPK';
-import { BasicAuth, getBasicAuth } from '/opt/utils/authHeader';
+import { BasicAuth } from '/opt/utils/authHeader';
+import * as user from './user';
 
 const logger = createLogger(`AddUser-${process.env.NODE_ENV}`);
 
@@ -14,16 +13,9 @@ interface AddUserRequest {
   Username: string;
 }
 
-export async function add(event: APIGatewayProxyEvent): Promise<any> {
+export async function add(event: APIGatewayProxyEvent, basicAuth: BasicAuth): Promise<any> {
   const req: AddUserRequest = JSON.parse(event.body ?? '');
-  let serverId: string;
-  try {
-    const basicAuth: BasicAuth = getBasicAuth(event.headers.Authorization ?? '');
-    serverId = basicAuth.username;
-  }
-  catch (error) {
-    return responseBadRequest({ message: `Couldn't authenticate the calling identity` });
-  }
+  let serverId: string = basicAuth.username;
   try {
     if(!process.env.DYNAMODB_TABLE) {
       return responseServerError({ message: 'Internal server error. Missing required configuration.' });
@@ -32,7 +24,7 @@ export async function add(event: APIGatewayProxyEvent): Promise<any> {
       return responseBadRequest({ message: 'Missing required request data.' });
     }
     const ddb: DynamoDB.DocumentClient = createDbInst();
-    const existingItemQuery = await getOne(ddb, req);
+    const existingItemQuery = await user.getOne(ddb, req);
     if(existingItemQuery.Item) {
       return responseOk({ message: `User successfully added` });
     }
@@ -57,23 +49,10 @@ export async function add(event: APIGatewayProxyEvent): Promise<any> {
   }
 }
 
-async function getOne(ddb: DynamoDB.DocumentClient, pk: UserPK): Promise<DynamoDB.GetItemOutput> {
-  if(!process.env.DYNAMODB_TABLE) {
-    throw new Error('Internal server error. Missing required configuration');
-  }
-  const params: DynamoDB.DocumentClient.GetItemInput = {
-    TableName: process.env.DYNAMODB_TABLE,
-    Key: {
-      PK: `#USER#${pk.ServerId}#${pk.UserId}`,
-      SK: `#USER#${pk.ServerId}#${pk.UserId}`
-    }
-  };
-  return await ddb.get(params).promise();
-}
 
 export const handler: APIGatewayProxyHandler = lambdaHandler(
-  async (event: APIGatewayProxyEvent): Promise<any> => {
+  async (event: APIGatewayProxyEvent, basicAuth: BasicAuth): Promise<any> => {
     logger.info(JSON.stringify(event));
-    return add(event);
+    return add(event, basicAuth);
   }
 )
