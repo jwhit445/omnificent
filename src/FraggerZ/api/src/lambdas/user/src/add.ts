@@ -24,7 +24,7 @@ export async function add(event: APIGatewayProxyEvent, basicAuth: BasicAuth): Pr
       return responseBadRequest({ message: 'Missing required request data.' });
     }
     const ddb: DynamoDB.DocumentClient = createDbInst();
-    const existingItemQuery = await user.getOne(ddb, req);
+    const existingItemQuery = await user.getOneUser(ddb, req);
     if(existingItemQuery.Item) {
       return responseOk({ message: `User successfully added` });
     }

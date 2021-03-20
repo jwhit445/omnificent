@@ -1,5 +1,5 @@
 {
-    "body": "{ \"Username\": \"t1dev\", \"StreamURL\": \"https://twitch.tv/t1dev\", \"DateTimeSuspensionEnd\": \"0001-01-01T00:00:00\", \"DateTimePremiumExpire\": \"2022-01-01T12:00:00\" }",
+    "body": "{ \"GameCode\": \"ROCO\", \"LadderName\": \"Main\", \"SeasonId\": \"1\", \"MMR\": \"25\", \"Sigma\": \"8.333\", \"Wins\": \"1\", \"Losses\": \"0\" }",
     "queryStringParameters": {
         "id": "6"
     },

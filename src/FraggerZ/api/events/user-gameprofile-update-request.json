@@ -1,5 +1,5 @@
 {
-    "body": "{ \"Username\": \"t1dev\", \"StreamURL\": \"https://twitch.tv/t1dev\", \"DateTimeSuspensionEnd\": \"0001-01-01T00:00:00\", \"DateTimePremiumExpire\": \"2022-01-01T12:00:00\" }",
+    "body": "{ \"GameCode\": \"ROCO\", \"IGN\": \"t1dev\", \"DateTimeLastStatReset\": \"0001-01-01T00:00:00\" }",
     "queryStringParameters": {
         "id": "6"
     },

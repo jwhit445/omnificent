@@ -180,6 +180,9 @@ Resources:
             Method: get
             RestApiId:
               Ref: FraggerZApi
+            RequestParameters:
+              - method.request.querystring.gameCode:
+                  Required: true
 
   UserUpdateGameProfile:
     Type: AWS::Serverless::Function
@@ -216,6 +219,13 @@ Resources:
             Method: get
             RestApiId:
               Ref: FraggerZApi
+            RequestParameters:
+              - method.request.querystring.gameCode:
+                  Required: true
+              - method.request.querystring.ladderName:
+                  Required: true
+              - method.request.querystring.seasonId:
+                  Required: true
 
   UserUpdateLadder:
     Type: AWS::Serverless::Function

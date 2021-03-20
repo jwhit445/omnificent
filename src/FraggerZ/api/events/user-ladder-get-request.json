@@ -1,11 +1,13 @@
 {
-    "body": "{ \"Username\": \"t1dev\", \"StreamURL\": \"https://twitch.tv/t1dev\", \"DateTimeSuspensionEnd\": \"0001-01-01T00:00:00\", \"DateTimePremiumExpire\": \"2022-01-01T12:00:00\" }",
     "queryStringParameters": {
-        "id": "6"
+        "id": "6",
+        "gameCode": "ROCO",
+        "ladderName": "Main",
+        "seasonId": 1
     },
     "resource": "/{proxy+}",
     "path": "/path/to/resource",
-    "httpMethod": "POST",
+    "httpMethod": "GET",
     "isBase64Encoded": false,
     "pathParameters": {
       "proxy": "/path/to/resource"

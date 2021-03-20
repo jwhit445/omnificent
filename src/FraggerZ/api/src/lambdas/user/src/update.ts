@@ -16,9 +16,6 @@ interface UpdateUserRequest {
 }
 
 export async function update(event: APIGatewayProxyEvent, basicAuth: BasicAuth): Promise<any> {
-  if(!process.env.DYNAMODB_TABLE) {
-    return responseServerError({ message: 'Internal server error. Missing required configuration.' });
-  }
   const userId = event.queryStringParameters?.id;
   const serverId: string = basicAuth.username;
   if(!userId) {
@@ -27,28 +24,15 @@ export async function update(event: APIGatewayProxyEvent, basicAuth: BasicAuth):
   try {
     const req: UpdateUserRequest = JSON.parse(event.body ?? '');
     const ddb: DynamoDB.DocumentClient = createDbInst();
-    const existingItemQuery = await user.getOne(ddb, { ServerId: serverId, UserId: userId });
+    const existingItemQuery = await user.getOneUser(ddb, { ServerId: serverId, UserId: userId });
     if(!existingItemQuery.Item) {
       return responseBadRequest({ message: `User doesn't exist.` });
     }
-    let params: DynamoDB.DocumentClient.UpdateItemInput = {
-      TableName: process.env.DYNAMODB_TABLE,
-      Key: {
-        PK: `#USER#${serverId}#${userId}`,
-        SK: `#USER#${serverId}#${userId}`
-      }
-    };
-    params.UpdateExpression = '';
-    params.ExpressionAttributeValues = {};
-    let k: keyof UpdateUserRequest;
-    for (k in req) {
-      if (!k) {
-        continue;
-      }
-      params.UpdateExpression += `${(params.UpdateExpression.length === 0) ? 'set' : ','} ${k} = :${k}`
-      params.ExpressionAttributeValues[`:${k}`] = req[k];
-    }
-    await ddb.update(params).promise();
+    let attributesToChange = Object.fromEntries(Object.entries(req).filter(([_, v]) => v !== undefined));
+    await user.update(ddb, attributesToChange, {
+      PK: `#USER#${serverId}#${userId}`,
+      SK: `#USER#${serverId}#${userId}`
+    });
     return responseOk({ message: `User successfully updated` });
   }
   catch (error) {
