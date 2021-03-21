@@ -4,10 +4,11 @@ import { createDbInst } from '/opt/aws/dynamodb';
 import { responseOk, responseBadRequest, responseServerError } from '/opt/utils/responses';
 import { lambdaHandler } from '/opt/utils/lambdaHandler';
 import { createLogger } from '/opt/utils/logger';
+import { BasicAuth } from '/opt/utils/authHeader';
 
 const logger = createLogger(`GetLadderLeaderboard-${process.env.NODE_ENV}`);
 
-export async function getLeaderboard(event: APIGatewayProxyEvent): Promise<any> {
+export async function getLeaderboard(event: APIGatewayProxyEvent, basicAuth: BasicAuth): Promise<any> {
   const ladderId = event.queryStringParameters?.id;
   if(!ladderId) {
       return responseBadRequest({ message: `Can't find ladder ID` });
@@ -20,8 +21,8 @@ export async function getLeaderboard(event: APIGatewayProxyEvent): Promise<any> 
 }
 
 export const handler: APIGatewayProxyHandler = lambdaHandler(
-  async (event: APIGatewayProxyEvent): Promise<any> => {
+  async (event: APIGatewayProxyEvent, basicAuth: BasicAuth): Promise<any> => {
     logger.info(JSON.stringify(event));
-    return getLeaderboard(event);
+    return getLeaderboard(event, basicAuth);
   }
 )

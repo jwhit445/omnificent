@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
-import { createDbInst, DynamoDB } from '/opt/aws/dynamodb';
+import { createDbInst, DynamoDB, dbUpdate } from '/opt/aws/dynamodb';
 import { responseOk, responseBadRequest, responseServerError } from '/opt/utils/responses';
 import { lambdaHandler } from '/opt/utils/lambdaHandler';
 import { createLogger } from '/opt/utils/logger';
@@ -29,7 +29,7 @@ export async function update(event: APIGatewayProxyEvent, basicAuth: BasicAuth):
       return responseBadRequest({ message: `User doesn't exist.` });
     }
     let attributesToChange = Object.fromEntries(Object.entries(req).filter(([_, v]) => v !== undefined));
-    await user.update(ddb, attributesToChange, {
+    await dbUpdate(ddb, attributesToChange, {
       PK: `#USER#${serverId}#${userId}`,
       SK: `#USER#${serverId}#${userId}`
     });

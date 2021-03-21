@@ -1,8 +1,10 @@
 {
-  "body": "{ \"UserId\": \"6\", \"Username\": \"t1dev\" }",
+  "queryStringParameters": {
+    "gameCode": "ROCO"
+  },
   "resource": "/{proxy+}",
   "path": "/path/to/resource",
-  "httpMethod": "POST",
+  "httpMethod": "GET",
   "isBase64Encoded": false,
   "pathParameters": {
     "proxy": "/path/to/resource"
@@ -111,3 +113,4 @@
     "protocol": "HTTP/1.1"
   }
 }
+  

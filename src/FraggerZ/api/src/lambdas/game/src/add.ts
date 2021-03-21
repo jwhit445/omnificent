@@ -4,35 +4,37 @@ import { responseOk, responseBadRequest, responseServerError } from '/opt/utils/
 import { lambdaHandler } from '/opt/utils/lambdaHandler';
 import { createLogger } from '/opt/utils/logger';
 import { BasicAuth } from '/opt/utils/authHeader';
-import * as user from './user';
+import * as game from './game';
 
-const logger = createLogger(`AddUser-${process.env.NODE_ENV}`);
+const logger = createLogger(`GameAdd-${process.env.NODE_ENV}`);
 
-interface AddUserRequest {
-  UserId: string;
-  Username: string;
+interface AddGameRequest {
+  GameCode: string;
+  ListGameModes?: string[],
+  ListCharacterNames?: string[];
+  ListMaps?: string[];
 }
 
 export async function add(event: APIGatewayProxyEvent, basicAuth: BasicAuth): Promise<any> {
-  const req: AddUserRequest = JSON.parse(event.body ?? '');
+  const req: AddGameRequest = JSON.parse(event.body ?? '');
   let serverId: string = basicAuth.username;
   try {
-    if(!req.UserId || !req.Username) {
+    if(!req.GameCode) {
       return responseBadRequest({ message: 'Missing required request data.' });
     }
     const ddb: DynamoDB.DocumentClient = createDbInst();
-    const existingItemQuery = await user.getOneUser(ddb, req);
+    const existingItemQuery = await game.getOneGame(ddb, { ServerId: serverId, ...req });
     if(existingItemQuery.Item) {
-      return responseOk({ message: `User successfully added` });
+      return responseOk({ message: `Game successfully added` });
     }
-    await dbUpdate(ddb, { ServerId: serverId, UserId: req.UserId, Username: req.Username }, {
-      PK: `#USER#${serverId}#${req.UserId}`,
-      SK: `#USER#${serverId}#${req.UserId}`
+    await dbUpdate(ddb, { ServerId: serverId, ...req }, {
+      PK: `#GAME#${serverId}#${req.GameCode}`,
+      SK: `#GAME#${serverId}#${req.GameCode}`
     });
-    return responseOk({ message: `User successfully added` });
+    return responseOk({ message: `Game successfully added` });
   }
   catch (error) {
-    return responseServerError({ message: 'Couldn\'t register the user' + JSON.stringify(error) });
+    return responseServerError({ message: 'Couldn\'t add the game' + JSON.stringify(error) });
   }
 }
 

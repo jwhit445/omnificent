@@ -1,5 +1,5 @@
 {
-  "body": "{ \"UserId\": \"6\", \"Username\": \"t1dev\" }",
+  "body": "{ \"GameCode\": \"ROCO\" }",
   "resource": "/{proxy+}",
   "path": "/path/to/resource",
   "httpMethod": "POST",

@@ -1,6 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
-import * as DynamoDB from 'aws-sdk/clients/dynamodb';
-import { createDbInst } from '/opt/aws/dynamodb';
+import { createDbInst, DynamoDB, dbUpdate } from '/opt/aws/dynamodb';
 import { responseOk, responseBadRequest, responseServerError } from '/opt/utils/responses';
 import { lambdaHandler } from '/opt/utils/lambdaHandler';
 import { createLogger } from '/opt/utils/logger';
@@ -29,7 +28,7 @@ export async function updateGameProfile(event: APIGatewayProxyEvent, basicAuth: 
       return responseBadRequest({ message: `User doesn't exist.` });
     }
     let attributesToChange = Object.fromEntries(Object.entries(req).filter(([_, v]) => v !== undefined));
-    await user.update(ddb, attributesToChange, {
+    await dbUpdate(ddb, attributesToChange, {
       PK: `#USER#${serverId}#${userId}`,
       SK: `GAMEPROFILE#${req.GameCode}`
     });

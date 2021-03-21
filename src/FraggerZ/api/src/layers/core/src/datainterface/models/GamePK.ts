@@ -4,5 +4,5 @@ import { GameCode } from "../../models/GameCode";
 
 export class GamePK {
 	ServerId?: string;
-	GameCode?: GameCode;
+	GameCode?: string;
 }

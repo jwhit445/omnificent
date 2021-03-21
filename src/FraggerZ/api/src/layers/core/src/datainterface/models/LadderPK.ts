@@ -4,6 +4,6 @@ import { GameCode } from "../../models/GameCode";
 
 export class LadderPK {
 	ServerId?: string;
-	GameCode?: GameCode;
+	GameCode?: string;
 	LadderName?: string;
 }

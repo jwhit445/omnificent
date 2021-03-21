@@ -1,8 +1,8 @@
 {
-  "body": "{ \"UserId\": \"6\", \"Username\": \"t1dev\" }",
+  "body": "{ \"GameCode\": \"ROCO\", \"ListGameModes\": [ \"Demolition\", \"Strikeout\" ], \"ListMaps\": [ \"Favelas\", \"Windward\" ] }",
   "resource": "/{proxy+}",
   "path": "/path/to/resource",
-  "httpMethod": "POST",
+  "httpMethod": "PUT",
   "isBase64Encoded": false,
   "pathParameters": {
     "proxy": "/path/to/resource"

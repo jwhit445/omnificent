@@ -1,15 +1,15 @@
 import { DynamoDB } from '/opt/aws/dynamodb';
-import { UserPK } from '/opt/datainterface/models/UserPK';
+import { GamePK } from '/opt/datainterface/models/GamePK';
 
-export async function getOneUser(ddb: DynamoDB.DocumentClient, pk: UserPK): Promise<DynamoDB.GetItemOutput> {
+export async function getOneGame(ddb: DynamoDB.DocumentClient, pk: GamePK): Promise<DynamoDB.GetItemOutput> {
     if(!process.env.DYNAMODB_TABLE) {
       throw new Error('Internal server error. Missing required configuration');
     }
     const params: DynamoDB.DocumentClient.GetItemInput = {
       TableName: process.env.DYNAMODB_TABLE,
       Key: {
-        PK: `#USER#${pk.ServerId}#${pk.UserId}`,
-        SK: `#USER#${pk.ServerId}#${pk.UserId}`
+        PK: `#GAME#${pk.ServerId}#${pk.GameCode}`,
+        SK: `#GAME#${pk.ServerId}#${pk.GameCode}`
       }
     };
     return await ddb.get(params).promise();

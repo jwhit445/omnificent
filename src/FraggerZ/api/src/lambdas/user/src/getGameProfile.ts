@@ -1,10 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
-import * as DynamoDB from 'aws-sdk/clients/dynamodb';
-import { createDbInst } from '/opt/aws/dynamodb';
+import { createDbInst, DynamoDB, dbGet } from '/opt/aws/dynamodb';
 import { responseOk, responseBadRequest, responseServerError } from '/opt/utils/responses';
 import { lambdaHandler } from '/opt/utils/lambdaHandler';
 import { createLogger } from '/opt/utils/logger';
-import * as user from './user';
 import { BasicAuth } from '/opt/utils/authHeader';
 
 const logger = createLogger(`GetUserGameProfile-${process.env.NODE_ENV}`);
@@ -18,7 +16,7 @@ export async function getGameProfile(event: APIGatewayProxyEvent, basicAuth: Bas
   }
   try {
     const ddb: DynamoDB.DocumentClient = createDbInst();
-    const results = await user.get(ddb, {
+    const results = await dbGet(ddb, {
       PK: `#USER#${serverId}#${userId}`,
       SK: `GAMEPROFILE#${gameCode}`
     });

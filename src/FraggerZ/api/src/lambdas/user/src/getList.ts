@@ -1,6 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
-import * as DynamoDB from 'aws-sdk/clients/dynamodb';
-import { createDbInst } from '/opt/aws/dynamodb';
+import { createDbInst, DynamoDB } from '/opt/aws/dynamodb';
 import { responseOk, responseBadRequest, responseServerError } from '/opt/utils/responses';
 import { lambdaHandler } from '/opt/utils/lambdaHandler';
 import { createLogger } from '/opt/utils/logger';

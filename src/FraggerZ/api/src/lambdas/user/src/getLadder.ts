@@ -1,11 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
-import * as DynamoDB from 'aws-sdk/clients/dynamodb';
-import { createDbInst } from '/opt/aws/dynamodb';
+import { createDbInst, DynamoDB, dbGet } from '/opt/aws/dynamodb';
 import { responseOk, responseBadRequest, responseServerError } from '/opt/utils/responses';
 import { lambdaHandler } from '/opt/utils/lambdaHandler';
 import { createLogger } from '/opt/utils/logger';
 import { BasicAuth } from '/opt/utils/authHeader';
-import * as user from './user';
 
 const logger = createLogger(`GetUserLadder-${process.env.NODE_ENV}`);
 
@@ -20,7 +18,7 @@ export async function getLadder(event: APIGatewayProxyEvent, basicAuth: BasicAut
   }
   try {
     const ddb: DynamoDB.DocumentClient = createDbInst();
-    const results = await user.get(ddb, {
+    const results = await dbGet(ddb, {
       PK: `#USER#${serverId}#${userId}`,
       SK: `LADDER#${gameCode}#${ladderName}#${seasonId}`
     });

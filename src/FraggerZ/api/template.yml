@@ -245,6 +245,24 @@ Resources:
             RestApiId:
               Ref: FraggerZApi
 
+  LadderAdd:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-ladder-add'
+      CodeUri: src/lambdas/ladder/dist/.
+      Handler: add.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /ladder
+            Method: post
+            RestApiId:
+              Ref: FraggerZApi
+
   LadderGetLeaderboard:
     Type: AWS::Serverless::Function
     Properties:
@@ -334,7 +352,60 @@ Resources:
             Method: put
             RestApiId:
               Ref: FraggerZApi
-            
+
+  GameAdd:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-game-add'
+      CodeUri: src/lambdas/game/dist/.
+      Handler: add.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /game
+            Method: post
+            RestApiId:
+              Ref: FraggerZApi
+
+  GameUpdate:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-game-update'
+      CodeUri: src/lambdas/game/dist/.
+      Handler: update.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /game
+            Method: put
+            RestApiId:
+              Ref: FraggerZApi
+
+  GameGetOne:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Stage}-game-getOne'
+      CodeUri: src/lambdas/game/dist/.
+      Handler: getOne.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /game/{gameCode}
+            Method: get
+            RestApiId:
+              Ref: FraggerZApi
         
   FraggerZTable:
     Type: AWS::DynamoDB::Table
